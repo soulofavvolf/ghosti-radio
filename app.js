@@ -3,30 +3,26 @@ const audio = document.getElementById("audio");
 let tracks = [];
 let currentIndex = -1;
 
-function $(id) {
-return document.getElementById(id);
-}
+const $ = (id) => document.getElementById(id);
 
 /* =========================
 HELPERS
 ========================= */
 
 function fmt(sec) {
-if (!Number.isFinite(sec)) {
-return "0:00";
-}
+if (!Number.isFinite(sec)) return "0:00";
 
-var minutes = Math.floor(sec / 60);
-
-var seconds = Math.floor(sec % 60)
+const m = Math.floor(sec / 60);
+const s = Math.floor(sec % 60)
 .toString()
 .padStart(2, "0");
 
-return minutes + ":" + seconds;
+return `${m}:${s}`;
 }
 
 function escapeHtml(value) {
-var map = {
+return String(value).replace(/[&<>"']/g, (char) => {
+const map = {
 "&": "&",
 "<": "<",
 ">": ">",
@@ -34,71 +30,52 @@ var map = {
 "'": "'"
 };
 
-return String(value).replace(
-/[&<>"']/g,
-function (char) {
+```
 return map[char];
-}
-);
+```
+
+});
 }
 
 /* =========================
-LOAD TRACKS
+LOAD PLAYLIST
 ========================= */
 
-function loadTracks() {
-
-fetch("tracks.json", {
+async function loadTracks() {
+try {
+const response = await fetch("tracks.json", {
 cache: "no-store"
-})
-.then(function (response) {
-
-```
-  if (!response.ok) {
-    throw new Error(
-      "tracks.json: " + response.status
-    );
-  }
-
-  return response.json();
-
-})
-.then(function (data) {
-
-  tracks = Array.isArray(data)
-    ? data
-    : [];
-
-  render();
-
-})
-.catch(function (error) {
-
-  console.error(
-    "GHOSTI RADIO:",
-    error
-  );
-
-  tracks = [];
-
-  if ($("trackCount")) {
-    $("trackCount").textContent =
-      "offline";
-  }
-
-  if ($("playlist")) {
-
-    $("playlist").innerHTML =
-      '<div class="empty">' +
-        '<div class="empty-ghost">👻</div>' +
-        '<p>کتابخانه موزیک در دسترس نیست.</p>' +
-      '</div>';
-
-  }
-
 });
+
+```
+if (!response.ok) {
+  throw new Error(`tracks.json: ${response.status}`);
+}
+
+const data = await response.json();
+
+tracks = Array.isArray(data) ? data : [];
+
+render();
 ```
 
+} catch (error) {
+console.error("GHOSTI RADIO:", error);
+
+```
+tracks = [];
+
+$("trackCount").textContent = "offline";
+
+$("playlist").innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>کتابخانه موزیک در دسترس نیست.</p>
+  </div>
+`;
+```
+
+}
 }
 
 /* =========================
@@ -106,124 +83,76 @@ RENDER
 ========================= */
 
 function render() {
+$("trackCount").textContent =
+`${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
 
-var count = $("trackCount");
-var playlist = $("playlist");
+const playlist = $("playlist");
 
-if (!count || !playlist) {
-return;
-}
-
-count.textContent =
-tracks.length +
-" track" +
-(tracks.length === 1 ? "" : "s");
-
-if (tracks.length === 0) {
+if (!tracks.length) {
+playlist.innerHTML = `       <div class="empty">         <div class="empty-ghost">👻</div>         <p>هنوز موزیکی اضافه نشده.</p>       </div>
+    `;
 
 ```
-playlist.innerHTML =
-  '<div class="empty">' +
-    '<div class="empty-ghost">👻</div>' +
-    '<p>هنوز موزیکی اضافه نشده.</p>' +
-  '</div>';
-
-if ($("player")) {
-  $("player").classList.add("hidden");
-}
+$("player").classList.add("hidden");
 
 return;
 ```
 
 }
 
-var html = "";
-
-tracks.forEach(function (track, index) {
+playlist.innerHTML = tracks.map((track, index) => {
+const active = index === currentIndex;
 
 ```
-var active =
-  index === currentIndex;
+return `
+  <div class="track ${active ? "is-playing" : ""}">
 
-var title =
-  escapeHtml(
-    track.name || "Untitled"
-  );
+    <div class="track-index">
+      ${String(index + 1).padStart(2, "0")}
+    </div>
 
-var artist =
-  escapeHtml(
-    track.artist || "GHOSTI"
-  );
+    <div class="track-info">
 
-var icon =
-  active && !audio.paused
-    ? "Ⅱ"
-    : "▶";
+      <div class="track-title">
+        ${escapeHtml(track.name || "Untitled")}
+      </div>
 
+      <div class="track-artist">
+        ${escapeHtml(track.artist || "GHOSTI")}
+      </div>
 
-html +=
-  '<div class="track ' +
-  (active ? "is-playing" : "") +
-  '">' +
+    </div>
 
-    '<div class="track-index">' +
-      String(index + 1).padStart(2, "0") +
-    '</div>' +
+    <div class="track-actions">
 
-    '<div class="track-info">' +
+      <button
+        class="icon-btn"
+        type="button"
+        data-play="${index}"
+        aria-label="Play"
+      >
+        ${active && !audio.paused ? "Ⅱ" : "▶"}
+      </button>
 
-      '<div class="track-title">' +
-        title +
-      '</div>' +
+    </div>
 
-      '<div class="track-artist">' +
-        artist +
-      '</div>' +
-
-    '</div>' +
-
-    '<div class="track-actions">' +
-
-      '<button ' +
-        'class="icon-btn" ' +
-        'type="button" ' +
-        'data-play="' + index + '" ' +
-        'aria-label="Play">' +
-        icon +
-      '</button>' +
-
-    '</div>' +
-
-  '</div>';
+  </div>
+`;
 ```
+
+}).join("");
+
+playlist
+.querySelectorAll("[data-play]")
+.forEach((button) => {
+
+```
+  button.addEventListener("click", () => {
+    playAt(Number(button.dataset.play));
+  });
 
 });
-
-playlist.innerHTML = html;
-
-var buttons =
-playlist.querySelectorAll(
-"[data-play]"
-);
-
-buttons.forEach(function (button) {
-
 ```
-button.addEventListener(
-  "click",
-  function () {
-
-    playAt(
-      Number(
-        button.dataset.play
-      )
-    );
-
-  }
-);
-```
-
-});
 
 }
 
@@ -231,443 +160,232 @@ button.addEventListener(
 PLAY TRACK
 ========================= */
 
-function playAt(index) {
+async function playAt(index) {
+if (!tracks[index]) return;
 
-if (!tracks[index]) {
-return;
-}
+const track = tracks[index];
 
-var track =
-tracks[index];
+currentIndex = index;
 
-currentIndex =
-index;
-
-var source =
-new URL(
+const source = new URL(
 track.file,
 window.location.href
 ).href;
 
-console.log(
-"GHOSTI RADIO:",
-source
-);
+console.log("GHOSTI RADIO:", source);
 
-audio.src =
-source;
+audio.src = source;
 
-if ($("nowTitle")) {
-
-```
 $("nowTitle").textContent =
-  track.name || "Untitled";
-```
+track.name || "Untitled";
 
-}
-
-if ($("nowArtist")) {
-
-```
 $("nowArtist").textContent =
-  track.artist || "GHOSTI";
-```
-
-}
+track.artist || "GHOSTI";
 
 if ($("nowTitleLarge")) {
-
-```
 $("nowTitleLarge").textContent =
-  track.name || "Untitled";
-```
-
+track.name || "Untitled";
 }
 
 if ($("nowArtistLarge")) {
-
-```
 $("nowArtistLarge").textContent =
-  track.artist || "GHOSTI";
-```
-
+track.artist || "GHOSTI";
 }
 
-if ($("player")) {
+$("player").classList.remove("hidden");
 
-```
-$("player").classList.remove(
-  "hidden"
-);
-```
-
+try {
+await audio.play();
+} catch (error) {
+console.error("Playback:", error);
 }
-
-audio.play()
-.catch(function (error) {
-
-```
-  console.error(
-    "GHOSTI RADIO playback:",
-    error
-  );
-
-});
-```
 
 render();
-
 }
 
 /* =========================
 PLAY / PAUSE
 ========================= */
 
-if ($("playBtn")) {
+$("playBtn").addEventListener("click", async () => {
 
-$("playBtn").addEventListener(
-"click",
-function () {
+if (!tracks.length) return;
+
+if (currentIndex < 0) {
+await playAt(0);
+return;
+}
+
+if (audio.paused) {
 
 ```
-  if (!tracks.length) {
-    return;
-  }
-
-
-  if (currentIndex < 0) {
-
-    playAt(0);
-
-    return;
-  }
-
-
-  if (audio.paused) {
-
-    audio.play()
-      .catch(function (error) {
-
-        console.error(
-          "GHOSTI RADIO playback:",
-          error
-        );
-
-      });
-
-  } else {
-
-    audio.pause();
-
-  }
-
+try {
+  await audio.play();
+} catch (error) {
+  console.error("Playback:", error);
 }
 ```
 
-);
+} else {
+
+```
+audio.pause();
+```
 
 }
+
+});
 
 /* =========================
 PREVIOUS
 ========================= */
 
-if ($("prevBtn")) {
+$("prevBtn").addEventListener("click", () => {
 
-$("prevBtn").addEventListener(
-"click",
-function () {
+if (!tracks.length) return;
 
-```
-  if (!tracks.length) {
-    return;
-  }
+const index =
+currentIndex <= 0
+? tracks.length - 1
+: currentIndex - 1;
 
+playAt(index);
 
-  var index;
-
-  if (currentIndex <= 0) {
-    index = tracks.length - 1;
-  } else {
-    index = currentIndex - 1;
-  }
-
-
-  playAt(index);
-
-}
-```
-
-);
-
-}
+});
 
 /* =========================
 NEXT
 ========================= */
 
-if ($("nextBtn")) {
+$("nextBtn").addEventListener("click", () => {
 
-$("nextBtn").addEventListener(
-"click",
-function () {
+if (!tracks.length) return;
 
-```
-  if (!tracks.length) {
-    return;
-  }
+const index =
+currentIndex >= tracks.length - 1
+? 0
+: currentIndex + 1;
 
+playAt(index);
 
-  var index;
-
-  if (
-    currentIndex >=
-    tracks.length - 1
-  ) {
-
-    index = 0;
-
-  } else {
-
-    index =
-      currentIndex + 1;
-
-  }
-
-
-  playAt(index);
-
-}
-```
-
-);
-
-}
+});
 
 /* =========================
 AUDIO EVENTS
 ========================= */
 
-audio.addEventListener(
-"play",
-function () {
+audio.addEventListener("play", () => {
 
-```
-if ($("playBtn")) {
+$("playBtn").textContent = "Ⅱ";
 
-  $("playBtn").textContent =
-    "Ⅱ";
-
-}
-
-
-document.body.classList.add(
-  "is-playing"
-);
-
+document.body.classList.add("is-playing");
 
 render();
-```
 
-}
-);
+});
 
-audio.addEventListener(
-"pause",
-function () {
+audio.addEventListener("pause", () => {
 
-```
-if ($("playBtn")) {
+$("playBtn").textContent = "▶";
 
-  $("playBtn").textContent =
-    "▶";
-
-}
-
-
-document.body.classList.remove(
-  "is-playing"
-);
-
+document.body.classList.remove("is-playing");
 
 render();
-```
 
-}
-);
+});
 
-audio.addEventListener(
-"loadedmetadata",
-function () {
+audio.addEventListener("loadedmetadata", () => {
 
-```
-if ($("duration")) {
+$("duration").textContent =
+fmt(audio.duration);
 
-  $("duration").textContent =
-    fmt(audio.duration);
+});
 
-}
-```
+audio.addEventListener("timeupdate", () => {
 
-}
-);
+if (!audio.duration) return;
 
-audio.addEventListener(
-"timeupdate",
-function () {
+const percent =
+(audio.currentTime / audio.duration) * 100;
 
-```
-if (!audio.duration) {
-  return;
-}
+$("progress").value = percent;
 
+$("currentTime").textContent =
+fmt(audio.currentTime);
 
-if ($("progress")) {
+});
 
-  $("progress").value =
-    (
-      audio.currentTime /
-      audio.duration
-    ) * 100;
+audio.addEventListener("ended", () => {
 
-}
+if (!tracks.length) return;
 
-
-if ($("currentTime")) {
-
-  $("currentTime").textContent =
-    fmt(audio.currentTime);
-
-}
-```
-
-}
-);
-
-audio.addEventListener(
-"ended",
-function () {
-
-```
-if (!tracks.length) {
-  return;
-}
-
-
-var next;
-
-if (
-  currentIndex >=
-  tracks.length - 1
-) {
-
-  next = 0;
-
-} else {
-
-  next =
-    currentIndex + 1;
-
-}
-
+const next =
+currentIndex >= tracks.length - 1
+? 0
+: currentIndex + 1;
 
 playAt(next);
-```
 
-}
-);
+});
 
-audio.addEventListener(
-"error",
-function () {
+audio.addEventListener("error", () => {
 
-```
 console.error(
-  "GHOSTI RADIO audio error:",
-  audio.src
+"GHOSTI RADIO audio error:",
+audio.src
 );
-```
 
-}
-);
+});
 
 /* =========================
 PROGRESS
 ========================= */
 
-if ($("progress")) {
+$("progress").addEventListener("input", (event) => {
 
-$("progress").addEventListener(
-"input",
-function (event) {
+if (!audio.duration) return;
 
-```
-  if (!audio.duration) {
-    return;
-  }
+audio.currentTime =
+(Number(event.target.value) / 100) *
+audio.duration;
 
-
-  audio.currentTime =
-    (
-      Number(
-        event.target.value
-      ) / 100
-    ) * audio.duration;
-
-}
-```
-
-);
-
-}
+});
 
 /* =========================
 MANAGEMENT
 ========================= */
 
-if ($("manageBtn")) {
+const manageBtn = $("manageBtn");
 
-$("manageBtn").addEventListener(
-"click",
-function () {
+if (manageBtn) {
+
+manageBtn.addEventListener("click", () => {
 
 ```
-  var panel =
-    $("managePanel");
+const panel = $("managePanel");
 
+if (!panel) return;
 
-  if (!panel) {
-    return;
-  }
+const show =
+  panel.classList.contains("hidden");
 
-
-  var show =
-    panel.classList.contains(
-      "hidden"
-    );
-
-
-  panel.classList.toggle(
-    "hidden",
-    !show
-  );
-
-
-  panel.setAttribute(
-    "aria-hidden",
-    String(!show)
-  );
-
-
-  document.body.classList.toggle(
-    "manage-mode",
-    show
-  );
-
-}
-```
-
+panel.classList.toggle(
+  "hidden",
+  !show
 );
+
+panel.setAttribute(
+  "aria-hidden",
+  String(!show)
+);
+
+document.body.classList.toggle(
+  "manage-mode",
+  show
+);
+```
+
+});
 
 }
 
