@@ -1,518 +1,703 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+const audio = document.getElementById("audio");
 
-:root{
---bg:#fefbf6;
---ink:#172027;
---muted:#7c8387;
---line:#dedbd4;
---card:#fffdf9;
---accent:#b9d8cf;
+let tracks = [];
+let currentIndex = -1;
+
+let audioContext = null;
+let analyser = null;
+let sourceNode = null;
+let equalizerFrame = null;
+
+const $ = (id) => document.getElementById(id);
+
+/* =========================
+HELPERS
+========================= */
+
+function fmt(sec) {
+if (!Number.isFinite(sec)) return "0:00";
+
+const m = Math.floor(sec / 60);
+
+const s = Math.floor(sec % 60)
+.toString()
+.padStart(2, "0");
+
+return `${m}:${s}`;
 }
 
-*{
-box-sizing:border-box;
-}
+function escapeHtml(value) {
 
-html,
-body{
-margin:0;
-min-height:100%;
-background:var(--bg);
-color:var(--ink);
-}
+return String(value).replace(/[&<>"']/g, (char) => {
 
-body{
-font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-}
+```
+const map = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;"
+};
 
-.site{
-width:min(680px,calc(100% - 32px));
-margin:0 auto;
-padding:52px 0 170px;
+return map[char];
+```
+
+});
+
 }
 
 /* =========================
-BRAND
+AUDIO ANALYZER
 ========================= */
 
-.brand{
-text-align:center;
-margin-bottom:38px;
-}
+function setupAudioAnalyzer() {
 
-.logo{
-width:min(300px,70vw);
-height:auto;
-display:block;
-margin:0 auto 16px;
-}
+if (audioContext) return;
 
-.radio-title{
-font-weight:700;
-font-size:20px;
-letter-spacing:2px;
-}
+audioContext =
+new (window.AudioContext || window.webkitAudioContext)();
 
-.radio-subtitle{
-font-size:11px;
-color:var(--muted);
-margin-top:8px;
-direction:ltr;
+analyser =
+audioContext.createAnalyser();
+
+analyser.fftSize = 256;
+
+analyser.smoothingTimeConstant = 0.82;
+
+sourceNode =
+audioContext.createMediaElementSource(audio);
+
+sourceNode.connect(analyser);
+
+analyser.connect(audioContext.destination);
+
 }
 
 /* =========================
-PLAYLIST
+EQUALIZER
 ========================= */
 
-.playlist-wrap{
-border:1px solid var(--line);
-background:var(--card);
+function animateEqualizer() {
+
+const bars =
+document.querySelectorAll("#equalizer span");
+
+if (!bars.length || !analyser) return;
+
+const data =
+new Uint8Array(analyser.frequencyBinCount);
+
+analyser.getByteFrequencyData(data);
+
+const step =
+Math.floor(data.length / bars.length);
+
+bars.forEach((bar, index) => {
+
+```
+const value =
+  data[index * step] || 0;
+
+const normalized =
+  value / 255;
+
+const height =
+  2 + normalized * 15;
+
+bar.style.height =
+  `${height}px`;
+```
+
+});
+
+equalizerFrame =
+requestAnimationFrame(animateEqualizer);
+
 }
 
-.playlist-head{
-height:44px;
-padding:0 14px;
-border-bottom:1px solid var(--line);
-display:flex;
-align-items:center;
-justify-content:space-between;
-direction:ltr;
-font-size:10px;
-color:var(--muted);
+function startEqualizer() {
+
+if (!analyser) return;
+
+if (audioContext.state === "suspended") {
+audioContext.resume();
 }
 
-.text-btn,
-.small-btn,
-.danger-btn{
-border:0;
-background:none;
-font:inherit;
-cursor:pointer;
+if (!equalizerFrame) {
+animateEqualizer();
 }
 
-.text-btn{
-color:var(--ink);
-text-decoration:underline;
-text-underline-offset:3px;
 }
 
-.track{
-display:grid;
-grid-template-columns:42px 1fr 42px;
-gap:10px;
-align-items:center;
-min-height:68px;
-padding:9px 12px;
-border-bottom:1px solid var(--line);
-direction:ltr;
-transition:background .18s ease;
+function stopEqualizer() {
+
+if (equalizerFrame) {
+
+```
+cancelAnimationFrame(equalizerFrame);
+
+equalizerFrame = null;
+```
+
 }
 
-.track:last-child{
-border-bottom:0;
-}
+const bars =
+document.querySelectorAll("#equalizer span");
 
-.track:hover{
-background:rgba(185,216,207,.12);
-}
+bars.forEach((bar) => {
 
-.track.is-playing{
-background:rgba(185,216,207,.16);
-}
+```
+bar.style.height = "2px";
+```
 
-.track-index{
-font-size:11px;
-color:var(--muted);
-text-align:center;
-}
+});
 
-.track-info{
-min-width:0;
-direction:ltr;
-}
-
-.track-title{
-font-size:12px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-}
-
-.track-artist{
-font-size:10px;
-color:var(--muted);
-margin-top:5px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-}
-
-.track-actions{
-display:flex;
-justify-content:flex-end;
-gap:4px;
-}
-
-.icon-btn{
-width:34px;
-height:34px;
-border:1px solid var(--line);
-background:transparent;
-border-radius:50%;
-cursor:pointer;
-color:var(--ink);
-font:inherit;
-transition:background .18s ease,transform .18s ease;
-}
-
-.icon-btn:hover{
-background:var(--accent);
-}
-
-.icon-btn:active{
-transform:scale(.94);
 }
 
 /* =========================
-EMPTY
+LOAD TRACKS
 ========================= */
 
-.empty{
-text-align:center;
-padding:42px 18px;
+async function loadTracks() {
+
+try {
+
+```
+const response =
+  await fetch("tracks.json", {
+    cache: "no-store"
+  });
+
+if (!response.ok) {
+  throw new Error(
+    `tracks.json: ${response.status}`
+  );
 }
 
-.empty-ghost{
-font-size:28px;
-margin-bottom:12px;
+const data =
+  await response.json();
+
+tracks =
+  Array.isArray(data)
+    ? data
+    : [];
+
+render();
+```
+
+} catch (error) {
+
+```
+console.error(
+  "GHOSTI RADIO:",
+  error
+);
+
+tracks = [];
+
+$("trackCount").textContent =
+  "offline";
+
+$("playlist").innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>کتابخانه موزیک در دسترس نیست.</p>
+  </div>
+`;
+```
+
 }
 
-.empty p{
-font-size:11px;
-color:var(--muted);
-margin:0 0 18px;
-}
-
-.small-btn{
-border:1px solid var(--line);
-padding:9px 12px;
-font-size:10px;
-}
-
-.small-btn:hover{
-background:var(--accent);
 }
 
 /* =========================
-MANAGEMENT
+RENDER
 ========================= */
 
-.manage-panel{
-margin-top:14px;
-border:1px dashed var(--line);
-padding:18px;
-background:var(--card);
+function render() {
+
+$("trackCount").textContent =
+`${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
+
+const playlist =
+$("playlist");
+
+if (!tracks.length) {
+
+```
+playlist.innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>هنوز موزیکی اضافه نشده.</p>
+  </div>
+`;
+
+$("player").classList.add("hidden");
+
+return;
+```
+
 }
 
-.hidden{
-display:none!important;
-}
+playlist.innerHTML =
+tracks.map((track, index) => {
 
-.manage-title{
-font-size:11px;
-font-weight:700;
-letter-spacing:1px;
-direction:ltr;
-}
+```
+  const active =
+    index === currentIndex;
 
-.hint{
-font-family:system-ui,sans-serif;
-font-size:12px;
-color:var(--muted);
-line-height:1.8;
-}
+  return `
+    <div class="track ${active ? "is-playing" : ""}">
 
-.upload{
-display:block;
-border:1px solid var(--line);
-padding:13px;
-text-align:center;
-cursor:pointer;
-font-size:11px;
-direction:rtl;
-}
+      <div class="track-index">
+        ${String(index + 1).padStart(2, "0")}
+      </div>
 
-.upload:hover{
-background:var(--accent);
-}
+      <div class="track-info">
 
-.upload input{
-display:none;
-}
+        <div class="track-title">
+          ${escapeHtml(track.name || "Untitled")}
+        </div>
 
-.upload-status{
-font-family:system-ui,sans-serif;
-font-size:11px;
-color:var(--muted);
-margin-top:10px;
-line-height:1.7;
-}
+        <div class="track-artist">
+          ${escapeHtml(track.artist || "GHOSTI")}
+        </div>
 
-.danger-btn{
-font-size:10px;
-color:#8b5d5d;
-margin-top:15px;
-text-decoration:underline;
-text-underline-offset:3px;
+      </div>
+
+      <div class="track-actions">
+
+        <button
+          class="icon-btn"
+          type="button"
+          data-play="${index}"
+          aria-label="Play"
+        >
+          ${
+            active && !audio.paused
+              ? "Ⅱ"
+              : "▶"
+          }
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+}).join("");
+```
+
+playlist
+.querySelectorAll("[data-play]")
+.forEach((button) => {
+
+```
+  button.addEventListener(
+    "click",
+    () => {
+
+      playAt(
+        Number(button.dataset.play)
+      );
+
+    }
+  );
+
+});
+```
+
 }
 
 /* =========================
-FOOTER
+PLAY TRACK
 ========================= */
 
-footer{
-text-align:center;
-color:var(--muted);
-font-size:10px;
-margin-top:32px;
-direction:ltr;
+async function playAt(index) {
+
+if (!tracks[index]) return;
+
+const track =
+tracks[index];
+
+currentIndex =
+index;
+
+const source =
+new URL(
+track.file,
+window.location.href
+).href;
+
+console.log(
+"GHOSTI RADIO:",
+source
+);
+
+audio.src =
+source;
+
+$("nowTitle").textContent =
+track.name || "Untitled";
+
+$("nowArtist").textContent =
+track.artist || "GHOSTI";
+
+if ($("nowTitleLarge")) {
+
+```
+$("nowTitleLarge").textContent =
+  track.name || "Untitled";
+```
+
+}
+
+if ($("nowArtistLarge")) {
+
+```
+$("nowArtistLarge").textContent =
+  track.artist || "GHOSTI";
+```
+
+}
+
+$("player")
+.classList
+.remove("hidden");
+
+try {
+
+```
+setupAudioAnalyzer();
+
+if (
+  audioContext &&
+  audioContext.state === "suspended"
+) {
+
+  await audioContext.resume();
+
+}
+
+
+await audio.play();
+```
+
+} catch (error) {
+
+```
+console.error(
+  "Playback:",
+  error
+);
+```
+
+}
+
+render();
+
 }
 
 /* =========================
-PLAYER
+PLAY / PAUSE
 ========================= */
 
-.player{
-position:fixed;
-left:50%;
-bottom:18px;
-transform:translateX(-50%);
-width:min(680px,calc(100% - 24px));
+$("playBtn")
+.addEventListener(
+"click",
+async () => {
 
-background:rgba(255,253,249,.97);
+```
+  if (!tracks.length) return;
 
-border:1px solid var(--line);
 
-box-shadow:0 8px 30px rgba(23,32,39,.08);
+  if (currentIndex === -1) {
 
-padding:10px 12px;
+    await playAt(0);
 
-display:grid;
+    return;
 
-grid-template-columns:
-1fr
-34px
-40px
-34px;
+  }
 
-gap:6px;
 
-align-items:center;
+  if (audio.paused) {
 
-direction:ltr;
+    try {
 
-backdrop-filter:blur(8px);
+      setupAudioAnalyzer();
+
+      if (
+        audioContext &&
+        audioContext.state === "suspended"
+      ) {
+
+        await audioContext.resume();
+
+      }
+
+      await audio.play();
+
+    } catch (error) {
+
+      console.error(
+        "Playback:",
+        error
+      );
+
+    }
+
+  } else {
+
+    audio.pause();
+
+  }
+
 }
+```
+
+);
 
 /* =========================
-NOW PLAYING
+PREVIOUS
 ========================= */
 
-.now-playing{
-display:flex;
-gap:9px;
-align-items:center;
-min-width:0;
-}
+$("prevBtn")
+.addEventListener(
+"click",
+() => {
 
-.now-dot{
-width:7px;
-height:7px;
-border-radius:50%;
-background:var(--ink);
-flex:none;
-}
+```
+  if (!tracks.length) return;
 
-body.is-playing .now-dot{
-animation:ghosti-pulse 1.4s ease-in-out infinite;
-}
 
-@keyframes ghosti-pulse{
+  const index =
+    currentIndex <= 0
+      ? tracks.length - 1
+      : currentIndex - 1;
 
-0%,
-100%{
-opacity:.35;
-transform:scale(.8);
-}
 
-50%{
-opacity:1;
-transform:scale(1);
-}
+  playAt(index);
 
 }
+```
 
-.now-text{
-min-width:0;
-}
-
-#nowTitle{
-font-size:11px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-}
-
-#nowArtist{
-font-size:9px;
-color:var(--muted);
-margin-top:3px;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-}
+);
 
 /* =========================
-PLAYER BUTTONS
+NEXT
 ========================= */
 
-.player-btn,
-.play-btn{
-border:0;
-background:none;
-cursor:pointer;
-color:var(--ink);
-font:inherit;
-}
+$("nextBtn")
+.addEventListener(
+"click",
+() => {
 
-.player-btn{
-font-size:25px;
-line-height:1;
-}
+```
+  if (!tracks.length) return;
 
-.play-btn{
-width:36px;
-height:36px;
-border:1px solid var(--ink);
-border-radius:50%;
-font-size:12px;
-transition:background .18s ease,transform .18s ease;
-}
 
-.play-btn:hover{
-background:var(--accent);
-}
+  const index =
+    currentIndex >= tracks.length - 1
+      ? 0
+      : currentIndex + 1;
 
-.play-btn:active{
-transform:scale(.94);
+
+  playAt(index);
+
 }
+```
+
+);
 
 /* =========================
-MINIMAL EQUALIZER
+AUDIO EVENTS
 ========================= */
 
-.equalizer{
-grid-column:1 / -1;
+audio.addEventListener(
+"play",
+() => {
 
-height:18px;
+```
+$("playBtn").textContent =
+  "Ⅱ";
 
-display:flex;
+document.body
+  .classList
+  .add("is-playing");
 
-align-items:center;
+startEqualizer();
 
-justify-content:center;
+render();
+```
 
-gap:3px;
-
-padding:0 2px;
-
-opacity:.35;
-
-overflow:hidden;
 }
+);
 
-.equalizer span{
-width:2px;
+audio.addEventListener(
+"pause",
+() => {
 
-height:4px;
+```
+$("playBtn").textContent =
+  "▶";
 
-min-height:2px;
+document.body
+  .classList
+  .remove("is-playing");
 
-background:var(--ink);
+stopEqualizer();
 
-border-radius:2px;
+render();
+```
 
-transform-origin:center;
-
-transition:
-height .08s linear,
-opacity .2s ease;
 }
+);
 
-body:not(.is-playing) .equalizer{
-opacity:.15;
-}
+audio.addEventListener(
+"loadedmetadata",
+() => {
 
-body:not(.is-playing) .equalizer span{
-height:2px!important;
+```
+$("duration").textContent =
+  fmt(audio.duration);
+```
+
 }
+);
+
+audio.addEventListener(
+"timeupdate",
+() => {
+
+```
+if (!audio.duration) return;
+
+
+const percent =
+  (audio.currentTime /
+    audio.duration) *
+  100;
+
+
+$("progress").value =
+  percent;
+
+
+$("currentTime").textContent =
+  fmt(audio.currentTime);
+```
+
+}
+);
+
+audio.addEventListener(
+"ended",
+() => {
+
+```
+if (!tracks.length) return;
+
+
+const next =
+  currentIndex >= tracks.length - 1
+    ? 0
+    : currentIndex + 1;
+
+
+playAt(next);
+```
+
+}
+);
+
+audio.addEventListener(
+"error",
+() => {
+
+```
+console.error(
+  "GHOSTI RADIO audio error:",
+  audio.src
+);
+```
+
+}
+);
 
 /* =========================
 PROGRESS
 ========================= */
 
-.progress-area{
-grid-column:1 / -1;
-}
+$("progress")
+.addEventListener(
+"input",
+(event) => {
 
-#progress{
-width:100%;
-accent-color:var(--ink);
-height:4px;
-}
+```
+  if (!audio.duration) return;
 
-.time{
-display:flex;
-justify-content:space-between;
-font-size:8px;
-color:var(--muted);
-margin-top:2px;
-direction:ltr;
+
+  audio.currentTime =
+    (Number(event.target.value) / 100) *
+    audio.duration;
+
+}
+```
+
+);
+
+/* =========================
+MANAGEMENT
+========================= */
+
+const manageBtn =
+$("manageBtn");
+
+if (manageBtn) {
+
+manageBtn.addEventListener(
+"click",
+() => {
+
+```
+  const panel =
+    $("managePanel");
+
+  if (!panel) return;
+
+
+  const show =
+    panel.classList.contains(
+      "hidden"
+    );
+
+
+  panel.classList.toggle(
+    "hidden",
+    !show
+  );
+
+
+  panel.setAttribute(
+    "aria-hidden",
+    String(!show)
+  );
+
+
+  document.body.classList.toggle(
+    "manage-mode",
+    show
+  );
+
+}
+```
+
+);
+
 }
 
 /* =========================
-MOBILE
+START
 ========================= */
 
-@media(max-width:520px){
-
-.site{
-padding-top:36px;
-}
-
-.logo{
-width:250px;
-}
-
-.radio-title{
-font-size:17px;
-}
-
-.player{
-grid-template-columns:
-1fr
-30px
-38px
-30px;
-}
-
-.equalizer{
-height:16px;
-gap:2px;
-}
-
-.equalizer span{
-width:2px;
-}
-
-}
+loadTracks();
