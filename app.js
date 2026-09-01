@@ -3,226 +3,150 @@ const audio = document.getElementById("audio");
 let tracks = [];
 let currentIndex = -1;
 
-/* =========================
-HELPERS
-========================= */
-
 const $ = (id) => document.getElementById(id);
 
-function fmt(sec){
+function fmt(sec) {
+if (!Number.isFinite(sec)) return "0:00";
 
-if(!Number.isFinite(sec)){
-return "0:00";
-}
-
-const minutes = Math.floor(sec / 60);
-
-const seconds = Math.floor(sec % 60)
+const m = Math.floor(sec / 60);
+const s = Math.floor(sec % 60)
 .toString()
 .padStart(2, "0");
 
-return `${minutes}:${seconds}`;
-
+return `${m}:${s}`;
 }
 
-function escapeHtml(value){
-
-return String(value).replace(
-/[&<>"']/g,
-(char) => ({
+function escapeHtml(value) {
+return String(value).replace(/[&<>"']/g, (char) => {
+const map = {
 "&": "&",
 "<": "<",
 ">": ">",
 '"': """,
 "'": "'"
-}[char])
-);
+};
 
+```
+return map[char];
+```
+
+});
 }
 
 /* =========================
-LOAD PUBLIC PLAYLIST
+LOAD TRACKS
 ========================= */
 
-async function loadTracks(){
-
-try{
+async function loadTracks() {
+try {
+const response = await fetch("tracks.json", {
+cache: "no-store"
+});
 
 ```
-const response = await fetch(
-  "tracks.json",
-  {
-    cache: "no-store"
-  }
-);
-
-
-if(!response.ok){
-
-  throw new Error(
-    `tracks.json: ${response.status}`
-  );
-
+if (!response.ok) {
+  throw new Error(`tracks.json: ${response.status}`);
 }
-
 
 const data = await response.json();
 
-
-if(!Array.isArray(data)){
-
-  throw new Error(
-    "tracks.json must contain an array"
-  );
-
-}
-
-
-tracks = data;
-
+tracks = Array.isArray(data) ? data : [];
 
 render();
 ```
 
-}catch(error){
+} catch (error) {
+console.error("GHOSTI RADIO:", error);
 
 ```
-console.error(
-  "GHOSTI RADIO:",
-  error
-);
-
-
 tracks = [];
 
+$("trackCount").textContent = "offline";
 
-if($("trackCount")){
-  $("trackCount").textContent = "offline";
-}
-
-
-if($("playlist")){
-
-  $("playlist").innerHTML = `
-    <div class="empty">
-      <div class="empty-ghost">👻</div>
-      <p>کتابخانه موزیک در دسترس نیست.</p>
-    </div>
-  `;
-
-}
+$("playlist").innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>کتابخانه موزیک در دسترس نیست.</p>
+  </div>
+`;
 ```
 
 }
-
 }
 
 /* =========================
-PLAYLIST
+RENDER PLAYLIST
 ========================= */
 
-function render(){
-
-if(!$("playlist")) return;
-
+function render() {
 $("trackCount").textContent =
 `${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
 
 const playlist = $("playlist");
 
-if(!tracks.length){
+if (!tracks.length) {
+playlist.innerHTML = `       <div class="empty">         <div class="empty-ghost">👻</div>         <p>هنوز موزیکی اضافه نشده.</p>       </div>
+    `;
 
 ```
-playlist.innerHTML = `
-  <div class="empty">
-    <div class="empty-ghost">👻</div>
-    <p>هنوز موزیکی اضافه نشده.</p>
-  </div>
-`;
-
-
-if($("player")){
-  $("player").classList.add("hidden");
-}
-
+$("player").classList.add("hidden");
 
 return;
 ```
 
 }
 
-playlist.innerHTML = tracks.map(
-(track, index) => {
+playlist.innerHTML = tracks.map((track, index) => {
 
 ```
-  const isActive =
-    index === currentIndex;
+const active = index === currentIndex;
 
+return `
+  <div class="track ${active ? "is-playing" : ""}">
 
-  return `
-    <div
-      class="track ${isActive ? "is-playing" : ""}"
-      data-track="${index}"
-    >
+    <div class="track-index">
+      ${String(index + 1).padStart(2, "0")}
+    </div>
 
-      <div class="track-index">
-        ${String(index + 1).padStart(2, "0")}
+    <div class="track-info">
+
+      <div class="track-title">
+        ${escapeHtml(track.name || "Untitled")}
       </div>
 
-
-      <div class="track-info">
-
-        <div class="track-title">
-          ${escapeHtml(track.name || "Untitled")}
-        </div>
-
-        <div class="track-artist">
-          ${escapeHtml(track.artist || "GHOSTI")}
-        </div>
-
-      </div>
-
-
-      <div class="track-actions">
-
-        <button
-          class="icon-btn"
-          type="button"
-          data-play="${index}"
-          aria-label="Play"
-        >
-          ${
-            isActive && !audio.paused
-              ? "Ⅱ"
-              : "▶"
-          }
-        </button>
-
+      <div class="track-artist">
+        ${escapeHtml(track.artist || "GHOSTI")}
       </div>
 
     </div>
-  `;
 
-}
+    <div class="track-actions">
+
+      <button
+        class="icon-btn"
+        type="button"
+        data-play="${index}"
+        aria-label="Play"
+      >
+        ${active && !audio.paused ? "Ⅱ" : "▶"}
+      </button>
+
+    </div>
+
+  </div>
+`;
 ```
 
-).join("");
+}).join("");
 
 playlist
 .querySelectorAll("[data-play]")
 .forEach((button) => {
 
 ```
-  button.addEventListener(
-    "click",
-    () => {
-
-      playAt(
-        Number(button.dataset.play)
-      );
-
-    }
-  );
+  button.addEventListener("click", () => {
+    playAt(Number(button.dataset.play));
+  });
 
 });
 ```
@@ -233,11 +157,9 @@ playlist
 PLAY TRACK
 ========================= */
 
-async function playAt(index){
+async function playAt(index) {
 
-if(!tracks[index]){
-return;
-}
+if (!tracks[index]) return;
 
 const track = tracks[index];
 
@@ -248,364 +170,213 @@ track.file,
 window.location.href
 ).href;
 
-console.log(
-"GHOSTI RADIO playing:",
-source
-);
+console.log("GHOSTI RADIO:", source);
 
 audio.src = source;
 
-if($("nowTitle")){
 $("nowTitle").textContent =
 track.name || "Untitled";
-}
 
-if($("nowArtist")){
 $("nowArtist").textContent =
 track.artist || "GHOSTI";
-}
 
-if($("nowTitleLarge")){
+if ($("nowTitleLarge")) {
 $("nowTitleLarge").textContent =
 track.name || "Untitled";
 }
 
-if($("nowArtistLarge")){
+if ($("nowArtistLarge")) {
 $("nowArtistLarge").textContent =
 track.artist || "GHOSTI";
 }
 
-if($("player")){
 $("player").classList.remove("hidden");
-}
 
-try{
-
-```
+try {
 await audio.play();
-```
-
-}catch(error){
-
-```
-console.error(
-  "GHOSTI RADIO playback:",
-  error
-);
-```
-
+} catch (error) {
+console.error("Playback:", error);
 }
 
 render();
-
 }
 
 /* =========================
 PLAY / PAUSE
 ========================= */
 
-$("playBtn").addEventListener(
-"click",
-async () => {
+$("playBtn").addEventListener("click", async () => {
 
-```
-if(!tracks.length){
-  return;
+if (!tracks.length) return;
+
+if (currentIndex === -1) {
+await playAt(0);
+return;
 }
 
-
-if(currentIndex < 0){
-
-  await playAt(0);
-
-  return;
-
+if (audio.paused) {
+await audio.play();
+} else {
+audio.pause();
 }
 
-
-if(audio.paused){
-
-  try{
-
-    await audio.play();
-
-  }catch(error){
-
-    console.error(
-      "GHOSTI RADIO:",
-      error
-    );
-
-  }
-
-}else{
-
-  audio.pause();
-
-}
-```
-
-}
-);
+});
 
 /* =========================
 PREVIOUS
 ========================= */
 
-$("prevBtn").addEventListener(
-"click",
-() => {
+$("prevBtn").addEventListener("click", () => {
 
-```
-if(!tracks.length){
-  return;
-}
+if (!tracks.length) return;
 
+const index =
+currentIndex <= 0
+? tracks.length - 1
+: currentIndex - 1;
 
-if(currentIndex <= 0){
+playAt(index);
 
-  playAt(
-    tracks.length - 1
-  );
-
-}else{
-
-  playAt(
-    currentIndex - 1
-  );
-
-}
-```
-
-}
-);
+});
 
 /* =========================
 NEXT
 ========================= */
 
-$("nextBtn").addEventListener(
-"click",
-() => {
+$("nextBtn").addEventListener("click", () => {
 
-```
-if(!tracks.length){
-  return;
-}
+if (!tracks.length) return;
 
+const index =
+currentIndex >= tracks.length - 1
+? 0
+: currentIndex + 1;
 
-if(
-  currentIndex >=
-  tracks.length - 1
-){
+playAt(index);
 
-  playAt(0);
-
-}else{
-
-  playAt(
-    currentIndex + 1
-  );
-
-}
-```
-
-}
-);
+});
 
 /* =========================
 AUDIO EVENTS
 ========================= */
 
-audio.addEventListener(
-"play",
-() => {
+audio.addEventListener("play", () => {
 
-```
 $("playBtn").textContent = "Ⅱ";
 
-document.body.classList.add(
-  "is-playing"
-);
+document.body.classList.add("is-playing");
 
 render();
-```
 
-}
-);
+});
 
-audio.addEventListener(
-"pause",
-() => {
+audio.addEventListener("pause", () => {
 
-```
 $("playBtn").textContent = "▶";
 
-document.body.classList.remove(
-  "is-playing"
-);
+document.body.classList.remove("is-playing");
 
 render();
-```
 
-}
-);
+});
 
-audio.addEventListener(
-"loadedmetadata",
-() => {
+audio.addEventListener("loadedmetadata", () => {
 
-```
 $("duration").textContent =
-  fmt(audio.duration);
-```
+fmt(audio.duration);
 
-}
-);
+});
 
-audio.addEventListener(
-"timeupdate",
-() => {
+audio.addEventListener("timeupdate", () => {
 
-```
-if(!audio.duration){
-  return;
-}
-
+if (!audio.duration) return;
 
 const percent =
-  (audio.currentTime /
-   audio.duration) * 100;
+(audio.currentTime / audio.duration) * 100;
 
-
-$("progress").value =
-  percent;
-
+$("progress").value = percent;
 
 $("currentTime").textContent =
-  fmt(audio.currentTime);
-```
+fmt(audio.currentTime);
 
-}
-);
+});
 
-audio.addEventListener(
-"ended",
-() => {
+audio.addEventListener("ended", () => {
 
-```
-if(!tracks.length){
-  return;
-}
+if (!tracks.length) return;
 
+const next =
+currentIndex >= tracks.length - 1
+? 0
+: currentIndex + 1;
 
-if(
-  currentIndex <
-  tracks.length - 1
-){
+playAt(next);
 
-  playAt(
-    currentIndex + 1
-  );
+});
 
-}else{
+audio.addEventListener("error", () => {
 
-  playAt(0);
-
-}
-```
-
-}
-);
-
-audio.addEventListener(
-"error",
-() => {
-
-```
 console.error(
-  "GHOSTI RADIO: audio error",
-  audio.src
+"GHOSTI RADIO audio error:",
+audio.src
 );
-```
 
-}
-);
+});
 
 /* =========================
 PROGRESS
 ========================= */
 
-$("progress").addEventListener(
-"input",
-(event) => {
+$("progress").addEventListener("input", (event) => {
 
-```
-if(!audio.duration){
-  return;
-}
-
-
-const percent =
-  Number(event.target.value);
-
+if (!audio.duration) return;
 
 audio.currentTime =
-  (percent / 100) *
-  audio.duration;
-```
+(Number(event.target.value) / 100) *
+audio.duration;
 
-}
-);
+});
 
 /* =========================
-MANAGEMENT PANEL
+MANAGE
 ========================= */
 
-function toggleManage(force){
+const manageBtn = $("manageBtn");
 
-const panel =
-$("managePanel");
+if (manageBtn) {
 
-if(!panel){
-return;
-}
+manageBtn.addEventListener("click", () => {
+
+```
+const panel = $("managePanel");
+
+if (!panel) return;
 
 const show =
-force ??
-panel.classList.contains("hidden");
+  panel.classList.contains("hidden");
 
 panel.classList.toggle(
-"hidden",
-!show
+  "hidden",
+  !show
 );
 
 panel.setAttribute(
-"aria-hidden",
-String(!show)
+  "aria-hidden",
+  String(!show)
 );
 
 document.body.classList.toggle(
-"manage-mode",
-show
+  "manage-mode",
+  show
 );
+```
 
-}
-
-const manageBtn =
-$("manageBtn");
-
-if(manageBtn){
-
-manageBtn.addEventListener(
-"click",
-() => toggleManage()
-);
+});
 
 }
 
 /* =========================
-INITIALIZE
+START RADIO
 ========================= */
 
 loadTracks();
