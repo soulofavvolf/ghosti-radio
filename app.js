@@ -325,17 +325,22 @@ AUDIO EVENTS
 
 audio.addEventListener("play", () => {
 
-$("playBtn").textContent = "Ⅱ";
+  $("playBtn").textContent = "Ⅱ";
 
-render();
+  document.body.classList.add("is-playing");
+
+  render();
 
 });
 
+
 audio.addEventListener("pause", () => {
 
-$("playBtn").textContent = "▶";
+  $("playBtn").textContent = "▶";
 
-render();
+  document.body.classList.remove("is-playing");
+
+  render();
 
 });
 
