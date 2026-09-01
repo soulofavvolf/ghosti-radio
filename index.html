@@ -1,20 +1,14 @@
-<!doctype html>
+<!DOCTYPE html>
 
-<html lang="fa" dir="rtl">
+<html lang="en">
 
 <head>
 
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
 
 <meta
 name="viewport"
-content="width=device-width, initial-scale=1"
-
->
-
-<meta
-name="theme-color"
-content="#fefbf6"
+content="width=device-width, initial-scale=1.0"
 
 >
 
@@ -22,8 +16,8 @@ content="#fefbf6"
 
   <link
     rel="icon"
-    type="image/png"
-    href="assets/ghosti-logo.png"
+    type="image/jpeg"
+    href="ghosti_profile_x54g.jpg"
   >
 
   <link
@@ -38,16 +32,12 @@ content="#fefbf6"
   <main class="site">
 
 ```
-<!-- =========================
-     BRAND
-     ========================= -->
-
 <header class="brand">
 
   <img
-    src="assets/ghosti-logo.png"
-    alt="GHOSTI"
     class="logo"
+    src="ghosti_profile_x54g.jpg"
+    alt="GHOSTI"
   >
 
   <div class="radio-title">
@@ -55,15 +45,11 @@ content="#fefbf6"
   </div>
 
   <div class="radio-subtitle">
-    music from ghosti
+    late night transmissions
   </div>
 
 </header>
 
-
-<!-- =========================
-     PLAYLIST
-     ========================= -->
 
 <section class="playlist-wrap">
 
@@ -84,10 +70,7 @@ content="#fefbf6"
   </div>
 
 
-  <div
-    id="playlist"
-    class="playlist"
-  >
+  <div id="playlist">
 
     <div class="empty">
 
@@ -96,16 +79,8 @@ content="#fefbf6"
       </div>
 
       <p>
-        هنوز موزیکی اضافه نشده.
+        در حال بارگذاری...
       </p>
-
-      <button
-        id="emptyManageBtn"
-        class="small-btn"
-        type="button"
-      >
-        اضافه کردن موزیک
-      </button>
 
     </div>
 
@@ -113,10 +88,6 @@ content="#fefbf6"
 
 </section>
 
-
-<!-- =========================
-     MANAGEMENT
-     ========================= -->
 
 <section
   id="managePanel"
@@ -129,63 +100,27 @@ content="#fefbf6"
   </div>
 
   <p class="hint">
-    فایل MP3 را انتخاب کن. آهنگ‌ها در همین مرورگر ذخیره می‌شوند.
+    فایل‌های موزیک را از طریق GitHub
+    به پوشه‌ی music اضافه کن و
+    tracks.json را به‌روزرسانی کن.
   </p>
-
-  <label class="upload">
-
-    <input
-      id="audioInput"
-      type="file"
-      accept="audio/*"
-      multiple
-    >
-
-    <span>
-      + انتخاب موزیک
-    </span>
-
-  </label>
-
-  <div
-    id="uploadStatus"
-    class="upload-status"
-  ></div>
-
-  <button
-    id="clearBtn"
-    class="danger-btn"
-    type="button"
-  >
-    حذف همه آهنگ‌ها
-  </button>
 
 </section>
 
 
-<!-- =========================
-     FOOTER
-     ========================= -->
-
 <footer>
-  @ghostimostiw
+  GHOSTI RADIO · 2026
 </footer>
 ```
 
   </main>
 
-  <!-- =========================
-       PLAYER
-       ========================= -->
-
   <div
-    class="player hidden"
     id="player"
+    class="player hidden"
   >
 
 ```
-<!-- NOW PLAYING -->
-
 <div class="now-playing">
 
   <div class="now-dot"></div>
@@ -193,11 +128,11 @@ content="#fefbf6"
   <div class="now-text">
 
     <div id="nowTitle">
-      —
+      Nothing playing
     </div>
 
     <div id="nowArtist">
-      —
+      GHOSTI
     </div>
 
   </div>
@@ -205,72 +140,35 @@ content="#fefbf6"
 </div>
 
 
-<!-- PREVIOUS -->
-
 <button
   id="prevBtn"
   class="player-btn"
   type="button"
-  aria-label="Previous"
+  aria-label="Previous track"
 >
   ‹
 </button>
 
 
-<!-- PLAY -->
-
 <button
   id="playBtn"
   class="play-btn"
   type="button"
-  aria-label="Play"
+  aria-label="Play or pause"
 >
   ▶
 </button>
 
 
-<!-- NEXT -->
-
 <button
   id="nextBtn"
   class="player-btn"
   type="button"
-  aria-label="Next"
+  aria-label="Next track"
 >
   ›
 </button>
 
-
-<!-- =========================
-     MINIMAL EQUALIZER
-     ========================= -->
-
-<div
-  class="equalizer"
-  id="equalizer"
-  aria-hidden="true"
->
-
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-  <span></span>
-
-</div>
-
-
-<!-- =========================
-     PROGRESS
-     ========================= -->
 
 <div class="progress-area">
 
@@ -280,6 +178,7 @@ content="#fefbf6"
     min="0"
     max="100"
     value="0"
+    step="0.1"
   >
 
   <div class="time">
@@ -295,14 +194,15 @@ content="#fefbf6"
   </div>
 
 </div>
-
-
-<!-- AUDIO -->
-
-<audio id="audio"></audio>
 ```
 
   </div>
+
+<audio
+id="audio"
+preload="metadata"
+
+> </audio>
 
   <script src="app.js"></script>
 
