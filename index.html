@@ -1,66 +1,138 @@
-<!doctype html>
-<html lang="fa" dir="rtl">
+<!DOCTYPE html>
+
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fefbf6">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>GHOSTI RADIO</title>
+
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+
   <main class="site">
-    <header class="brand">
-      <img src="assets/ghosti-logo.png" alt="GHOSTI" class="logo">
-      <div class="radio-title">GHOSTI RADIO</div>
-      <div class="radio-subtitle">music from ghosti</div>
-    </header>
 
-    <section class="playlist-wrap">
-      <div class="playlist-head">
-        <span id="trackCount">0 tracks</span>
-        <button id="manageBtn" class="text-btn" type="button">manage</button>
-      </div>
-      <div id="playlist" class="playlist">
-        <div class="empty">
-          <div class="empty-ghost">👻</div>
-          <p>هنوز موزیکی اضافه نشده.</p>
-          <button id="emptyManageBtn" class="small-btn" type="button">اضافه کردن موزیک</button>
-        </div>
-      </div>
-    </section>
+```
+<header class="brand">
+  <div class="ghost">👻</div>
 
-    <section id="managePanel" class="manage-panel hidden" aria-hidden="true">
-      <div class="manage-title">ADD MUSIC</div>
-      <p class="hint">فایل MP3 را انتخاب کن. آهنگ‌ها در همین مرورگر ذخیره می‌شوند.</p>
-      <label class="upload">
-        <input id="audioInput" type="file" accept="audio/*" multiple>
-        <span>+ انتخاب موزیک</span>
-      </label>
-      <div id="uploadStatus" class="upload-status"></div>
-      <button id="clearBtn" class="danger-btn" type="button">حذف همه آهنگ‌ها</button>
-    </section>
-
-    <footer>@ghostimostiw</footer>
-  </main>
-
-  <div class="player hidden" id="player">
-    <div class="now-playing">
-      <div class="now-dot"></div>
-      <div class="now-text">
-        <div id="nowTitle">—</div>
-        <div id="nowArtist">—</div>
-      </div>
-    </div>
-    <button id="prevBtn" class="player-btn" type="button" aria-label="Previous">‹</button>
-    <button id="playBtn" class="play-btn" type="button" aria-label="Play">▶</button>
-    <button id="nextBtn" class="player-btn" type="button" aria-label="Next">›</button>
-    <div class="progress-area">
-      <input id="progress" type="range" min="0" max="100" value="0">
-      <div class="time"><span id="currentTime">0:00</span><span id="duration">0:00</span></div>
-    </div>
-    <audio id="audio"></audio>
+  <div class="radio-title">
+    GHOSTI RADIO
   </div>
 
+  <div class="radio-subtitle">
+    late night transmissions
+  </div>
+</header>
+
+
+<section class="playlist-wrap">
+
+  <div class="playlist-head">
+    <span id="trackCount">0 tracks</span>
+  </div>
+
+  <div id="playlist"></div>
+
+</section>
+
+
+<footer>
+  GHOSTI RADIO · 2026
+</footer>
+```
+
+  </main>
+
+  <div id="player" class="player hidden">
+
+```
+<div class="now-playing">
+
+  <div class="now-dot"></div>
+
+  <div class="now-text">
+
+    <div id="nowTitle">
+      Nothing playing
+    </div>
+
+    <div id="nowArtist">
+      GHOSTI
+    </div>
+
+  </div>
+
+</div>
+
+
+<button
+  id="prevBtn"
+  class="player-btn"
+  type="button"
+  aria-label="Previous"
+>
+  ‹
+</button>
+
+
+<button
+  id="playBtn"
+  class="play-btn"
+  type="button"
+  aria-label="Play"
+>
+  ▶
+</button>
+
+
+<button
+  id="nextBtn"
+  class="player-btn"
+  type="button"
+  aria-label="Next"
+>
+  ›
+</button>
+
+
+<div class="progress-area">
+
+  <input
+    id="progress"
+    type="range"
+    min="0"
+    max="100"
+    value="0"
+    step="0.1"
+  >
+
+  <div class="time">
+
+    <span id="currentTime">
+      0:00
+    </span>
+
+    <span id="duration">
+      0:00
+    </span>
+
+  </div>
+
+</div>
+```
+
+  </div>
+
+<audio
+id="audio"
+preload="metadata"
+
+> </audio>
+
   <script src="app.js"></script>
+
 </body>
 </html>
