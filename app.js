@@ -1,337 +1,518 @@
-const audio = document.getElementById("audio");
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
-let tracks = [];
-let currentIndex = -1;
-
-const $ = (id) => document.getElementById(id);
-
-function fmt(sec) {
-  if (!Number.isFinite(sec)) return "0:00";
-
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60)
-    .toString()
-    .padStart(2, "0");
-
-  return `${m}:${s}`;
+:root{
+--bg:#fefbf6;
+--ink:#172027;
+--muted:#7c8387;
+--line:#dedbd4;
+--card:#fffdf9;
+--accent:#b9d8cf;
 }
 
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => {
-    const map = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    };
-    return map[char];
-  });
+*{
+box-sizing:border-box;
 }
 
-/* =========================
-   LOAD TRACKS
-   ========================= */
+html,
+body{
+margin:0;
+min-height:100%;
+background:var(--bg);
+color:var(--ink);
+}
 
-async function loadTracks() {
-  try {
-    const response = await fetch("tracks.json", {
-      cache: "no-store"
-    });
+body{
+font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
 
-    if (!response.ok) {
-      throw new Error(`tracks.json: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    tracks = Array.isArray(data) ? data : [];
-
-    render();
-  } catch (error) {
-    console.error("GHOSTI RADIO:", error);
-
-    tracks = [];
-
-    $("trackCount").textContent = "offline";
-
-    $("playlist").innerHTML = `
-      <div class="empty">
-        <div class="empty-ghost">👻</div>
-        <p>کتابخانه موزیک در دسترس نیست.</p>
-      </div>
-    `;
-  }
+.site{
+width:min(680px,calc(100% - 32px));
+margin:0 auto;
+padding:52px 0 170px;
 }
 
 /* =========================
-   RENDER PLAYLIST
-   ========================= */
+BRAND
+========================= */
 
-function render() {
-  $("trackCount").textContent =
-    `${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
+.brand{
+text-align:center;
+margin-bottom:38px;
+}
 
-  const playlist = $("playlist");
+.logo{
+width:min(300px,70vw);
+height:auto;
+display:block;
+margin:0 auto 16px;
+}
 
-  if (!tracks.length) {
-    playlist.innerHTML = `
-      <div class="empty">
-        <div class="empty-ghost">👻</div>
-        <p>هنوز موزیکی اضافه نشده.</p>
-      </div>
-    `;
+.radio-title{
+font-weight:700;
+font-size:20px;
+letter-spacing:2px;
+}
 
-    $("player").classList.add("hidden");
-
-    return;
-  }
-
-  playlist.innerHTML = tracks.map((track, index) => {
-    const active = index === currentIndex;
-
-    return `
-      <div class="track ${active ? "is-playing" : ""}">
-
-        <div class="track-index">
-          ${String(index + 1).padStart(2, "0")}
-        </div>
-
-        <div class="track-info">
-
-          <div class="track-title">
-            ${escapeHtml(track.name || "Untitled")}
-          </div>
-
-          <div class="track-artist">
-            ${escapeHtml(track.artist || "GHOSTI")}
-          </div>
-
-        </div>
-
-        <div class="track-actions">
-
-          <button
-            class="icon-btn"
-            type="button"
-            data-play="${index}"
-            aria-label="Play"
-          >
-            ${active && !audio.paused ? "Ⅱ" : "▶"}
-          </button>
-
-        </div>
-
-      </div>
-    `;
-  }).join("");
-
-  playlist
-    .querySelectorAll("[data-play]")
-    .forEach((button) => {
-      button.addEventListener("click", () => {
-        playAt(Number(button.dataset.play));
-      });
-    });
+.radio-subtitle{
+font-size:11px;
+color:var(--muted);
+margin-top:8px;
+direction:ltr;
 }
 
 /* =========================
-   PLAY TRACK
-   ========================= */
+PLAYLIST
+========================= */
 
-async function playAt(index) {
-  if (!tracks[index]) return;
+.playlist-wrap{
+border:1px solid var(--line);
+background:var(--card);
+}
 
-  const track = tracks[index];
+.playlist-head{
+height:44px;
+padding:0 14px;
+border-bottom:1px solid var(--line);
+display:flex;
+align-items:center;
+justify-content:space-between;
+direction:ltr;
+font-size:10px;
+color:var(--muted);
+}
 
-  currentIndex = index;
+.text-btn,
+.small-btn,
+.danger-btn{
+border:0;
+background:none;
+font:inherit;
+cursor:pointer;
+}
 
-  const source = new URL(
-    track.file,
-    window.location.href
-  ).href;
+.text-btn{
+color:var(--ink);
+text-decoration:underline;
+text-underline-offset:3px;
+}
 
-  console.log("GHOSTI RADIO:", source);
+.track{
+display:grid;
+grid-template-columns:42px 1fr 42px;
+gap:10px;
+align-items:center;
+min-height:68px;
+padding:9px 12px;
+border-bottom:1px solid var(--line);
+direction:ltr;
+transition:background .18s ease;
+}
 
-  audio.src = source;
+.track:last-child{
+border-bottom:0;
+}
 
-  $("nowTitle").textContent =
-    track.name || "Untitled";
+.track:hover{
+background:rgba(185,216,207,.12);
+}
 
-  $("nowArtist").textContent =
-    track.artist || "GHOSTI";
+.track.is-playing{
+background:rgba(185,216,207,.16);
+}
 
-  if ($("nowTitleLarge")) {
-    $("nowTitleLarge").textContent =
-      track.name || "Untitled";
-  }
+.track-index{
+font-size:11px;
+color:var(--muted);
+text-align:center;
+}
 
-  if ($("nowArtistLarge")) {
-    $("nowArtistLarge").textContent =
-      track.artist || "GHOSTI";
-  }
+.track-info{
+min-width:0;
+direction:ltr;
+}
 
-  $("player").classList.remove("hidden");
+.track-title{
+font-size:12px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
 
-  try {
-    await audio.play();
-  } catch (error) {
-    console.error("Playback:", error);
-  }
+.track-artist{
+font-size:10px;
+color:var(--muted);
+margin-top:5px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
 
-  render();
+.track-actions{
+display:flex;
+justify-content:flex-end;
+gap:4px;
+}
+
+.icon-btn{
+width:34px;
+height:34px;
+border:1px solid var(--line);
+background:transparent;
+border-radius:50%;
+cursor:pointer;
+color:var(--ink);
+font:inherit;
+transition:background .18s ease,transform .18s ease;
+}
+
+.icon-btn:hover{
+background:var(--accent);
+}
+
+.icon-btn:active{
+transform:scale(.94);
 }
 
 /* =========================
-   PLAY / PAUSE
-   ========================= */
+EMPTY
+========================= */
 
-$("playBtn").addEventListener("click", async () => {
-  if (!tracks.length) return;
+.empty{
+text-align:center;
+padding:42px 18px;
+}
 
-  if (currentIndex === -1) {
-    await playAt(0);
-    return;
-  }
+.empty-ghost{
+font-size:28px;
+margin-bottom:12px;
+}
 
-  if (audio.paused) {
-    await audio.play();
-  } else {
-    audio.pause();
-  }
-});
+.empty p{
+font-size:11px;
+color:var(--muted);
+margin:0 0 18px;
+}
 
-/* =========================
-   PREVIOUS
-   ========================= */
+.small-btn{
+border:1px solid var(--line);
+padding:9px 12px;
+font-size:10px;
+}
 
-$("prevBtn").addEventListener("click", () => {
-  if (!tracks.length) return;
-
-  const index =
-    currentIndex <= 0
-      ? tracks.length - 1
-      : currentIndex - 1;
-
-  playAt(index);
-});
-
-/* =========================
-   NEXT
-   ========================= */
-
-$("nextBtn").addEventListener("click", () => {
-  if (!tracks.length) return;
-
-  const index =
-    currentIndex >= tracks.length - 1
-      ? 0
-      : currentIndex + 1;
-
-  playAt(index);
-});
-
-/* =========================
-   AUDIO EVENTS
-   ========================= */
-
-audio.addEventListener("play", () => {
-  $("playBtn").textContent = "Ⅱ";
-
-  document.body.classList.add("is-playing");
-
-  render();
-});
-
-audio.addEventListener("pause", () => {
-  $("playBtn").textContent = "▶";
-
-  document.body.classList.remove("is-playing");
-
-  render();
-});
-
-audio.addEventListener("loadedmetadata", () => {
-  $("duration").textContent =
-    fmt(audio.duration);
-});
-
-audio.addEventListener("timeupdate", () => {
-  if (!audio.duration) return;
-
-  const percent =
-    (audio.currentTime / audio.duration) * 100;
-
-  $("progress").value = percent;
-
-  $("currentTime").textContent =
-    fmt(audio.currentTime);
-});
-
-audio.addEventListener("ended", () => {
-  if (!tracks.length) return;
-
-  const next =
-    currentIndex >= tracks.length - 1
-      ? 0
-      : currentIndex + 1;
-
-  playAt(next);
-});
-
-audio.addEventListener("error", () => {
-  console.error(
-    "GHOSTI RADIO audio error:",
-    audio.src
-  );
-});
-
-/* =========================
-   PROGRESS
-   ========================= */
-
-$("progress").addEventListener("input", (event) => {
-  if (!audio.duration) return;
-
-  audio.currentTime =
-    (Number(event.target.value) / 100) *
-    audio.duration;
-});
-
-/* =========================
-   MANAGE
-   ========================= */
-
-const manageBtn = $("manageBtn");
-
-if (manageBtn) {
-  manageBtn.addEventListener("click", () => {
-    const panel = $("managePanel");
-
-    if (!panel) return;
-
-    const show =
-      panel.classList.contains("hidden");
-
-    panel.classList.toggle(
-      "hidden",
-      !show
-    );
-
-    panel.setAttribute(
-      "aria-hidden",
-      String(!show)
-    );
-
-    document.body.classList.toggle(
-      "manage-mode",
-      show
-    );
-  });
+.small-btn:hover{
+background:var(--accent);
 }
 
 /* =========================
-   START RADIO
-   ========================= */
+MANAGEMENT
+========================= */
 
-loadTracks();
+.manage-panel{
+margin-top:14px;
+border:1px dashed var(--line);
+padding:18px;
+background:var(--card);
+}
+
+.hidden{
+display:none!important;
+}
+
+.manage-title{
+font-size:11px;
+font-weight:700;
+letter-spacing:1px;
+direction:ltr;
+}
+
+.hint{
+font-family:system-ui,sans-serif;
+font-size:12px;
+color:var(--muted);
+line-height:1.8;
+}
+
+.upload{
+display:block;
+border:1px solid var(--line);
+padding:13px;
+text-align:center;
+cursor:pointer;
+font-size:11px;
+direction:rtl;
+}
+
+.upload:hover{
+background:var(--accent);
+}
+
+.upload input{
+display:none;
+}
+
+.upload-status{
+font-family:system-ui,sans-serif;
+font-size:11px;
+color:var(--muted);
+margin-top:10px;
+line-height:1.7;
+}
+
+.danger-btn{
+font-size:10px;
+color:#8b5d5d;
+margin-top:15px;
+text-decoration:underline;
+text-underline-offset:3px;
+}
+
+/* =========================
+FOOTER
+========================= */
+
+footer{
+text-align:center;
+color:var(--muted);
+font-size:10px;
+margin-top:32px;
+direction:ltr;
+}
+
+/* =========================
+PLAYER
+========================= */
+
+.player{
+position:fixed;
+left:50%;
+bottom:18px;
+transform:translateX(-50%);
+width:min(680px,calc(100% - 24px));
+
+background:rgba(255,253,249,.97);
+
+border:1px solid var(--line);
+
+box-shadow:0 8px 30px rgba(23,32,39,.08);
+
+padding:10px 12px;
+
+display:grid;
+
+grid-template-columns:
+1fr
+34px
+40px
+34px;
+
+gap:6px;
+
+align-items:center;
+
+direction:ltr;
+
+backdrop-filter:blur(8px);
+}
+
+/* =========================
+NOW PLAYING
+========================= */
+
+.now-playing{
+display:flex;
+gap:9px;
+align-items:center;
+min-width:0;
+}
+
+.now-dot{
+width:7px;
+height:7px;
+border-radius:50%;
+background:var(--ink);
+flex:none;
+}
+
+body.is-playing .now-dot{
+animation:ghosti-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ghosti-pulse{
+
+0%,
+100%{
+opacity:.35;
+transform:scale(.8);
+}
+
+50%{
+opacity:1;
+transform:scale(1);
+}
+
+}
+
+.now-text{
+min-width:0;
+}
+
+#nowTitle{
+font-size:11px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+#nowArtist{
+font-size:9px;
+color:var(--muted);
+margin-top:3px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+/* =========================
+PLAYER BUTTONS
+========================= */
+
+.player-btn,
+.play-btn{
+border:0;
+background:none;
+cursor:pointer;
+color:var(--ink);
+font:inherit;
+}
+
+.player-btn{
+font-size:25px;
+line-height:1;
+}
+
+.play-btn{
+width:36px;
+height:36px;
+border:1px solid var(--ink);
+border-radius:50%;
+font-size:12px;
+transition:background .18s ease,transform .18s ease;
+}
+
+.play-btn:hover{
+background:var(--accent);
+}
+
+.play-btn:active{
+transform:scale(.94);
+}
+
+/* =========================
+MINIMAL EQUALIZER
+========================= */
+
+.equalizer{
+grid-column:1 / -1;
+
+height:18px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+gap:3px;
+
+padding:0 2px;
+
+opacity:.35;
+
+overflow:hidden;
+}
+
+.equalizer span{
+width:2px;
+
+height:4px;
+
+min-height:2px;
+
+background:var(--ink);
+
+border-radius:2px;
+
+transform-origin:center;
+
+transition:
+height .08s linear,
+opacity .2s ease;
+}
+
+body:not(.is-playing) .equalizer{
+opacity:.15;
+}
+
+body:not(.is-playing) .equalizer span{
+height:2px!important;
+}
+
+/* =========================
+PROGRESS
+========================= */
+
+.progress-area{
+grid-column:1 / -1;
+}
+
+#progress{
+width:100%;
+accent-color:var(--ink);
+height:4px;
+}
+
+.time{
+display:flex;
+justify-content:space-between;
+font-size:8px;
+color:var(--muted);
+margin-top:2px;
+direction:ltr;
+}
+
+/* =========================
+MOBILE
+========================= */
+
+@media(max-width:520px){
+
+.site{
+padding-top:36px;
+}
+
+.logo{
+width:250px;
+}
+
+.radio-title{
+font-size:17px;
+}
+
+.player{
+grid-template-columns:
+1fr
+30px
+38px
+30px;
+}
+
+.equalizer{
+height:16px;
+gap:2px;
+}
+
+.equalizer span{
+width:2px;
+}
+
+}
