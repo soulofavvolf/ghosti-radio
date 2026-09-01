@@ -1,214 +1,463 @@
+const audio = document.getElementById("audio");
+
 let tracks = [];
 let currentIndex = -1;
+
+/* =========================
+HELPERS
+========================= */
+
 const $ = (id) => document.getElementById(id);
-const audio = $("audio");
 
-function fmt(sec) {
-  if (!Number.isFinite(sec)) return "0:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+function fmt(sec){
+if(!Number.isFinite(sec)) return "0:00";
+
+const m = Math.floor(sec / 60);
+const s = Math.floor(sec % 60)
+.toString()
+.padStart(2, "0");
+
+return `${m}:${s}`;
 }
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[m]));
+function escapeHtml(value){
+return String(value).replace(
+/[&<>"']/g,
+(char) => ({
+"&":"&",
+"<":"<",
+">":">",
+'"':""",
+"'":"'"
+}[char])
+);
 }
 
-async function loadTracks() {
-  const response = await fetch("tracks.json", {
-    cache: "no-store"
-  });
+/* =========================
+LOAD PUBLIC PLAYLIST
+========================= */
 
-  if (!response.ok) {
-    throw new Error("tracks.json could not be loaded");
-  }
+async function loadTracks(){
 
-  const data = await response.json();
+try{
 
-  if (!Array.isArray(data)) {
-    throw new Error("tracks.json must contain an array");
-  }
+```
+const response = await fetch("tracks.json", {
+  cache: "no-store"
+});
 
-  tracks = data.filter(
-    (track) =>
-      track &&
-      typeof track.name === "string" &&
-      typeof track.file === "string"
-  );
-
-  render();
+if(!response.ok){
+  throw new Error(`tracks.json: ${response.status}`);
 }
 
-function render() {
-  $("trackCount").textContent =
-    `${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
+const data = await response.json();
 
-  const el = $("playlist");
+tracks = Array.isArray(data) ? data : [];
 
-  if (!tracks.length) {
-    el.innerHTML = `
-      <div class="empty">
-        <div class="empty-ghost">👻</div>
-        <p>هنوز موزیکی اضافه نشده.</p>
-      </div>
-    `;
+render();
+```
 
-    $("player").classList.add("hidden");
-    return;
-  }
+}catch(error){
 
-  el.innerHTML = tracks.map((t, i) => `
-    <div class="track">
-      <div class="track-index">${String(i + 1).padStart(2, "0")}</div>
+```
+console.error("GHOSTI RADIO:", error);
 
-      <div class="track-info">
-        <div class="track-title">${escapeHtml(t.name)}</div>
-        <div class="track-artist">
-          ${escapeHtml(t.artist || "GHOSTI")}
-        </div>
-      </div>
+tracks = [];
 
-      <div class="track-actions">
-        <button
-          class="icon-btn"
-          data-play="${i}"
-          aria-label="Play"
-          type="button"
-        >
-          ${i === currentIndex && !audio.paused ? "Ⅱ" : "▶"}
-        </button>
-      </div>
+$("trackCount").textContent = "offline";
+
+$("playlist").innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>کتابخانه موزیک در دسترس نیست.</p>
+  </div>
+`;
+```
+
+}
+
+}
+
+/* =========================
+PLAYLIST
+========================= */
+
+function render(){
+
+$("trackCount").textContent =
+`${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
+
+const playlist = $("playlist");
+
+if(!tracks.length){
+
+```
+playlist.innerHTML = `
+  <div class="empty">
+    <div class="empty-ghost">👻</div>
+    <p>هنوز موزیکی اضافه نشده.</p>
+  </div>
+`;
+
+$("player").classList.add("hidden");
+
+return;
+```
+
+}
+
+playlist.innerHTML = tracks.map((track, index) => {
+
+```
+const isActive = index === currentIndex;
+
+return `
+  <div
+    class="track ${isActive ? "is-playing" : ""}"
+    data-track="${index}"
+  >
+
+    <div class="track-index">
+      ${String(index + 1).padStart(2, "0")}
     </div>
-  `).join("");
 
-  el.querySelectorAll("[data-play]").forEach((button) => {
-    button.onclick = () => playAt(Number(button.dataset.play));
+    <div class="track-info">
+
+      <div class="track-title">
+        ${escapeHtml(track.name || "Untitled")}
+      </div>
+
+      <div class="track-artist">
+        ${escapeHtml(track.artist || "GHOSTI")}
+      </div>
+
+    </div>
+
+    <div class="track-actions">
+
+      <button
+        class="icon-btn"
+        type="button"
+        data-play="${index}"
+        aria-label="Play"
+      >
+        ${isActive && !audio.paused ? "Ⅱ" : "▶"}
+      </button>
+
+    </div>
+
+  </div>
+`;
+```
+
+}).join("");
+
+playlist
+.querySelectorAll("[data-play]")
+.forEach(button => {
+
+```
+  button.addEventListener("click", () => {
+
+    playAt(Number(button.dataset.play));
+
   });
+
+});
+```
+
 }
 
-async function playAt(index) {
-  if (!tracks[index]) return;
+/* =========================
+PLAY TRACK
+========================= */
 
-  currentIndex = index;
+async function playAt(index){
 
-  audio.src = tracks[index].file;
+if(!tracks[index]) return;
 
-  $("nowTitle").textContent = tracks[index].name;
-  $("nowArtist").textContent = tracks[index].artist || "GHOSTI";
+const track = tracks[index];
 
-  $("player").classList.remove("hidden");
+currentIndex = index;
 
-  try {
-    await audio.play();
-  } catch (error) {
-    console.log("Playback waiting for user interaction.");
-  }
+/*
+GitHub Pages مسیرهای نسبی را از ریشه سایت
+resolve می‌کند.
+*/
 
-  render();
+const source = new URL(
+track.file,
+window.location.href
+).href;
+
+audio.src = source;
+
+$("nowTitle").textContent =
+track.name || "Untitled";
+
+$("nowArtist").textContent =
+track.artist || "GHOSTI";
+
+$("nowTitleLarge").textContent =
+track.name || "Untitled";
+
+$("nowArtistLarge").textContent =
+track.artist || "GHOSTI";
+
+$("player").classList.remove("hidden");
+
+/*
+در بعضی موبایل‌ها play فقط بعد از
+تعامل کاربر اجازه دارد.
+*/
+
+try{
+
+```
+await audio.play();
+```
+
+}catch(error){
+
+```
+console.log("Playback waiting for user interaction.");
+```
+
 }
 
-$("manageBtn").onclick = () => {
-  const panel = $("managePanel");
-  const show = panel.classList.contains("hidden");
+render();
 
-  panel.classList.toggle("hidden", !show);
-  panel.setAttribute("aria-hidden", String(!show));
-  document.body.classList.toggle("manage-mode", show);
-};
+}
 
-$("playBtn").onclick = async () => {
-  if (currentIndex < 0) {
-    await playAt(0);
-    return;
-  }
+/* =========================
+PLAY / PAUSE
+========================= */
 
-  if (audio.paused) {
-    await audio.play();
-  } else {
-    audio.pause();
-  }
-};
+$("playBtn").addEventListener("click", async () => {
 
-$("prevBtn").onclick = () => {
-  if (!tracks.length) return;
+if(!tracks.length) return;
 
-  playAt(
-    currentIndex <= 0
-      ? tracks.length - 1
-      : currentIndex - 1
-  );
-};
+if(currentIndex < 0){
 
-$("nextBtn").onclick = () => {
-  if (!tracks.length) return;
+```
+await playAt(0);
 
-  playAt(
-    currentIndex >= tracks.length - 1
-      ? 0
-      : currentIndex + 1
-  );
-};
+return;
+```
+
+}
+
+if(audio.paused){
+
+```
+try{
+
+  await audio.play();
+
+}catch(error){
+
+  console.log(error);
+
+}
+```
+
+}else{
+
+```
+audio.pause();
+```
+
+}
+
+});
+
+/* =========================
+PREVIOUS
+========================= */
+
+$("prevBtn").addEventListener("click", () => {
+
+if(!tracks.length) return;
+
+if(currentIndex <= 0){
+
+```
+playAt(tracks.length - 1);
+```
+
+}else{
+
+```
+playAt(currentIndex - 1);
+```
+
+}
+
+});
+
+/* =========================
+NEXT
+========================= */
+
+$("nextBtn").addEventListener("click", () => {
+
+if(!tracks.length) return;
+
+if(currentIndex >= tracks.length - 1){
+
+```
+playAt(0);
+```
+
+}else{
+
+```
+playAt(currentIndex + 1);
+```
+
+}
+
+});
+
+/* =========================
+AUDIO EVENTS
+========================= */
 
 audio.addEventListener("play", () => {
-  $("playBtn").textContent = "Ⅱ";
-  render();
+
+$("playBtn").textContent = "Ⅱ";
+
+render();
+
 });
 
 audio.addEventListener("pause", () => {
-  $("playBtn").textContent = "▶";
-  render();
-});
 
-audio.addEventListener("ended", () => {
-  if (!tracks.length) return;
+$("playBtn").textContent = "▶";
 
-  const nextIndex =
-    currentIndex >= tracks.length - 1
-      ? 0
-      : currentIndex + 1;
+render();
 
-  playAt(nextIndex);
 });
 
 audio.addEventListener("loadedmetadata", () => {
-  $("duration").textContent = fmt(audio.duration);
+
+$("duration").textContent =
+fmt(audio.duration);
+
 });
 
 audio.addEventListener("timeupdate", () => {
-  const percentage = audio.duration
-    ? (audio.currentTime / audio.duration) * 100
-    : 0;
 
-  $("progress").value = percentage;
-  $("currentTime").textContent = fmt(audio.currentTime);
+if(!audio.duration) return;
+
+const percent =
+(audio.currentTime / audio.duration) * 100;
+
+$("progress").value = percent;
+
+$("currentTime").textContent =
+fmt(audio.currentTime);
+
 });
 
-$("progress").oninput = (event) => {
-  if (audio.duration) {
-    audio.currentTime =
-      (Number(event.target.value) / 100) * audio.duration;
-  }
-};
+audio.addEventListener("ended", () => {
 
-(async () => {
-  try {
-    await loadTracks();
-  } catch (error) {
-    console.error(error);
+if(!tracks.length) return;
 
-    $("trackCount").textContent = "0 tracks";
+if(currentIndex < tracks.length - 1){
 
-    $("playlist").innerHTML = `
-      <div class="empty">
-        <div class="empty-ghost">👻</div>
-        <p>خطا در بارگذاری لیست موزیک.</p>
-      </div>
-    `;
-  }
-})();
+```
+playAt(currentIndex + 1);
+```
+
+}else{
+
+```
+/*
+  وقتی آخرین آهنگ تمام شد،
+  رادیو دوباره از اول شروع می‌شود.
+*/
+
+playAt(0);
+```
+
+}
+
+});
+
+audio.addEventListener("error", () => {
+
+console.error(
+"GHOSTI RADIO: unable to load audio",
+audio.src
+);
+
+});
+
+/* =========================
+PROGRESS
+========================= */
+
+$("progress").addEventListener("input", (event) => {
+
+if(!audio.duration) return;
+
+const percent =
+Number(event.target.value);
+
+audio.currentTime =
+(percent / 100) * audio.duration;
+
+});
+
+/* =========================
+MANAGEMENT PANEL
+========================= */
+
+function toggleManage(force){
+
+const panel = $("managePanel");
+
+if(!panel) return;
+
+const show =
+force ?? panel.classList.contains("hidden");
+
+panel.classList.toggle(
+"hidden",
+!show
+);
+
+panel.setAttribute(
+"aria-hidden",
+String(!show)
+);
+
+document.body.classList.toggle(
+"manage-mode",
+show
+);
+
+}
+
+/*
+اگر manageBtn در HTML نسخه فعلی وجود داشته باشد،
+پنل مدیریت باز و بسته می‌شود.
+*/
+
+const manageBtn = $("manageBtn");
+
+if(manageBtn){
+
+manageBtn.addEventListener(
+"click",
+() => toggleManage()
+);
+
+}
+
+/* =========================
+INITIALIZE
+========================= */
+
+loadTracks();
