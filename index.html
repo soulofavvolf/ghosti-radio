@@ -1,59 +1,69 @@
 <!doctype html>
 
 <html lang="fa" dir="rtl">
+
 <head>
+
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fefbf6">
-  <meta name="description" content="GHOSTI RADIO — music from ghosti">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1"
+
+>
+
+<meta
+name="theme-color"
+content="#fefbf6"
+
+>
+
   <title>GHOSTI RADIO</title>
-<link rel="icon" type="image/png" href="assets/ghosti-logo.png">
-<link rel="stylesheet" href="styles.css">
+
+  <link
+    rel="icon"
+    type="image/png"
+    href="assets/ghosti-logo.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
 </head>
 
 <body>
+
   <main class="site">
 
 ```
+<!-- =========================
+     BRAND
+     ========================= -->
+
 <header class="brand">
-  <div class="brand-mark">
-    <img
-      src="assets/ghosti-logo.png"
-      alt="GHOSTI"
-      class="logo"
-    >
+
+  <img
+    src="assets/ghosti-logo.png"
+    alt="GHOSTI"
+    class="logo"
+  >
+
+  <div class="radio-title">
+    GHOSTI RADIO
   </div>
 
-  <div class="radio-title">GHOSTI RADIO</div>
-  <div class="radio-subtitle">music from ghosti</div>
+  <div class="radio-subtitle">
+    music from ghosti
+  </div>
+
 </header>
 
 
-<section class="on-air" aria-label="Now playing">
-
-  <div class="on-air-label">
-    <span class="on-air-dot"></span>
-    <span>ON AIR</span>
-  </div>
-
-  <div class="on-air-content">
-
-    <div class="on-air-info">
-
-      <div class="on-air-kicker">
-        NOW PLAYING
-      </div>
-
-      <div id="nowTitleLarge">—</div>
-
-      <div id="nowArtistLarge">—</div>
-
-    </div>
-
-  </div>
-
-</section>
-
+<!-- =========================
+     PLAYLIST
+     ========================= -->
 
 <section class="playlist-wrap">
 
@@ -63,13 +73,21 @@
       0 tracks
     </span>
 
-    <span class="playlist-label">
-      PLAYLIST
-    </span>
+    <button
+      id="manageBtn"
+      class="text-btn"
+      type="button"
+    >
+      manage
+    </button>
 
   </div>
 
-  <div id="playlist" class="playlist">
+
+  <div
+    id="playlist"
+    class="playlist"
+  >
 
     <div class="empty">
 
@@ -81,12 +99,24 @@
         هنوز موزیکی اضافه نشده.
       </p>
 
+      <button
+        id="emptyManageBtn"
+        class="small-btn"
+        type="button"
+      >
+        اضافه کردن موزیک
+      </button>
+
     </div>
 
   </div>
 
 </section>
 
+
+<!-- =========================
+     MANAGEMENT
+     ========================= -->
 
 <section
   id="managePanel"
@@ -95,60 +125,66 @@
 >
 
   <div class="manage-title">
-    MUSIC LIBRARY
+    ADD MUSIC
   </div>
 
   <p class="hint">
-    موزیک‌ها از کتابخانه عمومی GHOSTI RADIO بارگذاری می‌شوند.
+    فایل MP3 را انتخاب کن. آهنگ‌ها در همین مرورگر ذخیره می‌شوند.
   </p>
 
-  <div class="library-note">
+  <label class="upload">
 
-    برای اضافه کردن موزیک جدید، فایل MP3 را در پوشه
-    <code>music/</code>
-    قرار بده و اطلاعات آن را در
-    <code>tracks.json</code>
-    اضافه کن.
+    <input
+      id="audioInput"
+      type="file"
+      accept="audio/*"
+      multiple
+    >
 
-  </div>
+    <span>
+      + انتخاب موزیک
+    </span>
+
+  </label>
+
+  <div
+    id="uploadStatus"
+    class="upload-status"
+  ></div>
+
+  <button
+    id="clearBtn"
+    class="danger-btn"
+    type="button"
+  >
+    حذف همه آهنگ‌ها
+  </button>
 
 </section>
 
 
+<!-- =========================
+     FOOTER
+     ========================= -->
+
 <footer>
-
-  <span>GHOSTI RADIO</span>
-
-  <span class="footer-separator">
-    ·
-  </span>
-
-  <span>
-    @ghostimostiw
-  </span>
-
+  @ghostimostiw
 </footer>
 ```
 
   </main>
 
+  <!-- =========================
+       PLAYER
+       ========================= -->
+
   <div
     class="player hidden"
     id="player"
-    aria-label="Audio player"
   >
 
 ```
-<div class="player-status">
-
-  <span class="player-live-dot"></span>
-
-  <span>
-    ON AIR
-  </span>
-
-</div>
-
+<!-- NOW PLAYING -->
 
 <div class="now-playing">
 
@@ -169,37 +205,72 @@
 </div>
 
 
-<div class="player-controls">
+<!-- PREVIOUS -->
 
-  <button
-    id="prevBtn"
-    class="player-btn"
-    type="button"
-    aria-label="Previous track"
-  >
-    ‹
-  </button>
+<button
+  id="prevBtn"
+  class="player-btn"
+  type="button"
+  aria-label="Previous"
+>
+  ‹
+</button>
 
-  <button
-    id="playBtn"
-    class="play-btn"
-    type="button"
-    aria-label="Play"
-  >
-    ▶
-  </button>
 
-  <button
-    id="nextBtn"
-    class="player-btn"
-    type="button"
-    aria-label="Next track"
-  >
-    ›
-  </button>
+<!-- PLAY -->
+
+<button
+  id="playBtn"
+  class="play-btn"
+  type="button"
+  aria-label="Play"
+>
+  ▶
+</button>
+
+
+<!-- NEXT -->
+
+<button
+  id="nextBtn"
+  class="player-btn"
+  type="button"
+  aria-label="Next"
+>
+  ›
+</button>
+
+
+<!-- =========================
+     MINIMAL EQUALIZER
+     ========================= -->
+
+<div
+  class="equalizer"
+  id="equalizer"
+  aria-hidden="true"
+>
+
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
+  <span></span>
 
 </div>
 
+
+<!-- =========================
+     PROGRESS
+     ========================= -->
 
 <div class="progress-area">
 
@@ -209,7 +280,6 @@
     min="0"
     max="100"
     value="0"
-    aria-label="Track progress"
   >
 
   <div class="time">
@@ -227,10 +297,9 @@
 </div>
 
 
-<audio
-  id="audio"
-  preload="metadata"
-></audio>
+<!-- AUDIO -->
+
+<audio id="audio"></audio>
 ```
 
   </div>
@@ -238,4 +307,5 @@
   <script src="app.js"></script>
 
 </body>
+
 </html>
