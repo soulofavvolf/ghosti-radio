@@ -25,6 +25,7 @@ color:var(--ink);
 body{
 font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 -webkit-font-smoothing:antialiased;
+text-rendering:optimizeLegibility;
 }
 
 button,
@@ -35,6 +36,10 @@ font:inherit;
 button{
 -webkit-tap-highlight-color:transparent;
 }
+
+/* =========================
+MAIN LAYOUT
+========================= */
 
 .site{
 width:min(680px,calc(100% - 32px));
@@ -81,10 +86,24 @@ ON AIR
 ========================= */
 
 .on-air{
+position:relative;
 border:1px solid var(--line);
 background:var(--card);
 margin-bottom:18px;
 overflow:hidden;
+}
+
+.on-air::after{
+content:"";
+position:absolute;
+left:0;
+bottom:0;
+width:100%;
+height:2px;
+background:var(--accent);
+transform:scaleX(.08);
+transform-origin:left;
+transition:transform .6s ease;
 }
 
 .on-air-label{
@@ -100,18 +119,16 @@ letter-spacing:1.5px;
 color:var(--muted);
 }
 
-.on-air-dot,
-.player-live-dot{
+.on-air-dot{
 width:6px;
 height:6px;
 border-radius:50%;
-background:var(--ink);
+background:var(--muted);
 flex:none;
-animation:livePulse 2s ease-in-out infinite;
 }
 
 .on-air-content{
-padding:23px 20px 25px;
+padding:25px 20px 28px;
 }
 
 .on-air-info{
@@ -121,27 +138,46 @@ direction:ltr;
 
 .on-air-kicker{
 font-size:8px;
-letter-spacing:1.5px;
+letter-spacing:1.8px;
 color:var(--muted);
-margin-bottom:9px;
+margin-bottom:10px;
 }
 
 #nowTitleLarge{
-font-size:20px;
+font-size:21px;
 font-weight:700;
 line-height:1.35;
 white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipsis;
+transition:opacity .2s ease;
 }
 
 #nowArtistLarge{
 font-size:10px;
 color:var(--muted);
-margin-top:7px;
+margin-top:8px;
 white-space:nowrap;
 overflow:hidden;
 text-overflow:ellipsis;
+}
+
+/* =========================
+ACTIVE RADIO STATE
+========================= */
+
+body.is-playing .on-air::after{
+transform:scaleX(1);
+animation:radioLine 3s ease-in-out infinite;
+}
+
+body.is-playing .on-air-dot{
+background:var(--ink);
+animation:livePulse 1.6s ease-in-out infinite;
+}
+
+body.is-playing #nowTitleLarge{
+animation:titleReveal .35s ease-out;
 }
 
 /* =========================
@@ -181,8 +217,7 @@ border-bottom:1px solid var(--line);
 direction:ltr;
 transition:
 background .2s ease,
-padding-left .2s ease,
-padding-right .2s ease;
+transform .2s ease;
 }
 
 .track:last-child{
@@ -191,6 +226,10 @@ border-bottom:0;
 
 .track:hover{
 background:var(--accent-soft);
+}
+
+.track:active{
+transform:scale(.995);
 }
 
 .track-index{
@@ -220,6 +259,35 @@ overflow:hidden;
 text-overflow:ellipsis;
 }
 
+/* =========================
+ACTIVE TRACK
+========================= */
+
+.track.is-playing{
+background:var(--accent-soft);
+}
+
+.track.is-playing .track-index{
+color:var(--ink);
+}
+
+.track.is-playing .track-title{
+font-weight:700;
+}
+
+.track.is-playing .track-artist{
+color:#657276;
+}
+
+.track.is-playing .icon-btn{
+background:var(--accent);
+border-color:var(--accent);
+}
+
+/* =========================
+TRACK BUTTON
+========================= */
+
 .track-actions{
 display:flex;
 justify-content:flex-end;
@@ -234,6 +302,9 @@ border-radius:50%;
 cursor:pointer;
 color:var(--ink);
 font:inherit;
+display:flex;
+align-items:center;
+justify-content:center;
 transition:
 background .18s ease,
 border-color .18s ease,
@@ -246,7 +317,7 @@ border-color:var(--accent);
 }
 
 .icon-btn:active{
-transform:scale(.94);
+transform:scale(.92);
 }
 
 /* =========================
@@ -336,6 +407,7 @@ position:fixed;
 left:50%;
 bottom:18px;
 transform:translateX(-50%);
+
 width:min(680px,calc(100% - 24px));
 
 background:rgba(255,253,249,.97);
@@ -359,6 +431,10 @@ backdrop-filter:blur(10px);
 animation:playerIn .25s ease-out;
 }
 
+/* =========================
+PLAYER STATUS
+========================= */
+
 .player-status{
 grid-column:1 / -1;
 
@@ -374,7 +450,19 @@ color:var(--muted);
 .player-live-dot{
 width:5px;
 height:5px;
+border-radius:50%;
+background:var(--muted);
+flex:none;
 }
+
+body.is-playing .player-live-dot{
+background:var(--ink);
+animation:livePulse 1.6s ease-in-out infinite;
+}
+
+/* =========================
+PLAYER NOW PLAYING
+========================= */
 
 .now-playing{
 display:flex;
@@ -387,8 +475,13 @@ min-width:0;
 width:7px;
 height:7px;
 border-radius:50%;
-background:var(--ink);
+background:var(--muted);
 flex:none;
+}
+
+body.is-playing .now-dot{
+background:var(--ink);
+animation:livePulse 1.6s ease-in-out infinite;
 }
 
 .now-text{
@@ -411,6 +504,10 @@ overflow:hidden;
 text-overflow:ellipsis;
 }
 
+/* =========================
+PLAYER CONTROLS
+========================= */
+
 .player-controls{
 display:flex;
 align-items:center;
@@ -432,6 +529,9 @@ width:30px;
 height:36px;
 font-size:25px;
 line-height:1;
+display:flex;
+align-items:center;
+justify-content:center;
 }
 
 .play-btn{
@@ -440,6 +540,11 @@ height:38px;
 border:1px solid var(--ink);
 border-radius:50%;
 font-size:11px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
 transition:
 background .18s ease,
 transform .18s ease;
@@ -452,6 +557,10 @@ background:var(--accent);
 .play-btn:active{
 transform:scale(.93);
 }
+
+/* =========================
+PROGRESS
+========================= */
 
 .progress-area{
 grid-column:1 / -1;
@@ -474,10 +583,11 @@ direction:ltr;
 }
 
 /* =========================
-ANIMATION
+ANIMATIONS
 ========================= */
 
 @keyframes livePulse{
+
 0%,100%{
 opacity:1;
 transform:scale(1);
@@ -487,9 +597,39 @@ transform:scale(1);
 opacity:.35;
 transform:scale(.75);
 }
+
+}
+
+@keyframes radioLine{
+
+0%,100%{
+opacity:.45;
+transform:scaleX(.55);
+}
+
+50%{
+opacity:1;
+transform:scaleX(1);
+}
+
+}
+
+@keyframes titleReveal{
+
+from{
+opacity:.35;
+transform:translateY(3px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+
 }
 
 @keyframes playerIn{
+
 from{
 opacity:0;
 transform:translateX(-50%) translateY(8px);
@@ -499,6 +639,7 @@ to{
 opacity:1;
 transform:translateX(-50%) translateY(0);
 }
+
 }
 
 /* =========================
@@ -536,11 +677,15 @@ margin-bottom:12px;
 }
 
 .on-air-content{
-padding:20px 15px 21px;
+padding:21px 15px 24px;
 }
 
 #nowTitleLarge{
-font-size:16px;
+font-size:17px;
+}
+
+#nowArtistLarge{
+font-size:9px;
 }
 
 .track{
@@ -583,7 +728,22 @@ height:38px;
 footer{
 margin-top:26px;
 }
+
 }
+
+/* =========================
+ACCESSIBILITY
+========================= */
+
+button:focus-visible,
+input:focus-visible{
+outline:2px solid var(--ink);
+outline-offset:3px;
+}
+
+/* =========================
+REDUCED MOTION
+========================= */
 
 @media(prefers-reduced-motion:reduce){
 
@@ -594,4 +754,5 @@ animation-duration:.01ms!important;
 animation-iteration-count:1!important;
 transition-duration:.01ms!important;
 }
+
 }
