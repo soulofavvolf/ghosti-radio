@@ -14,43 +14,39 @@
 
   <main class="radio">
 
-    <!-- HEADER -->
     <header class="header">
       <div class="logo">GHOSTI RADIO</div>
-      <div class="subtitle">INTERNET RADIO</div>
+      <div class="subtitle">ONLINE / 001</div>
     </header>
 
 
-    <!-- INTRO -->
     <section class="intro">
-
-      <div class="eyebrow">WELCOME TO</div>
+      <div class="eyebrow">INDEPENDENT RADIO</div>
 
       <h1>GHOSTI</h1>
 
       <p class="description">
-        A small place for music after midnight.
+        A small radio for late nights,
+        quiet rooms and sounds that stay.
       </p>
-
     </section>
 
 
-    <!-- PLAYER -->
     <section class="player">
 
       <div class="track-info">
 
-        <div class="track-number">
+        <div class="track-number" id="trackNumber">
           01
         </div>
 
         <div>
-          <div class="track-title" id="nowTitle">
-            GHOSTI RADIO
+          <div class="track-title" id="trackTitle">
+            No track playing
           </div>
 
-          <div class="track-artist" id="nowArtist">
-            Select a track
+          <div class="track-artist" id="trackArtist">
+            GHOSTI
           </div>
         </div>
 
@@ -88,7 +84,7 @@
 
 
       <div class="progress">
-        <span id="progressBar"></span>
+        <div id="progressBar"></div>
       </div>
 
       <div class="time">
@@ -99,10 +95,9 @@
     </section>
 
 
-    <!-- FOOTER -->
     <footer class="footer">
-      <span>GHOSTI</span>
-      <span>01 TRACK</span>
+      <span id="trackCount">0 tracks</span>
+      <span>GHOSTI / RADIO</span>
     </footer>
 
   </main>
