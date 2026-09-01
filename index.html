@@ -1,54 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fefbf6">
+  <meta name="description" content="GHOSTI RADIO — music from ghosti">
   <title>GHOSTI RADIO</title>
-
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-
   <main class="site">
 
 ```
 <header class="brand">
-  <div class="ghost">👻</div>
-
-  <div class="radio-title">
-    GHOSTI RADIO
+  <div class="brand-mark">
+    <img
+      src="assets/ghosti-logo.png"
+      alt="GHOSTI"
+      class="logo"
+    >
   </div>
 
-  <div class="radio-subtitle">
-    late night transmissions
-  </div>
+  <div class="radio-title">GHOSTI RADIO</div>
+  <div class="radio-subtitle">music from ghosti</div>
 </header>
+
+
+<section class="on-air" aria-label="Now playing">
+
+  <div class="on-air-label">
+    <span class="on-air-dot"></span>
+    <span>ON AIR</span>
+  </div>
+
+  <div class="on-air-content">
+
+    <div class="on-air-info">
+
+      <div class="on-air-kicker">
+        NOW PLAYING
+      </div>
+
+      <div id="nowTitleLarge">—</div>
+
+      <div id="nowArtistLarge">—</div>
+
+    </div>
+
+  </div>
+
+</section>
 
 
 <section class="playlist-wrap">
 
   <div class="playlist-head">
-    <span id="trackCount">0 tracks</span>
+
+    <span id="trackCount">
+      0 tracks
+    </span>
+
+    <span class="playlist-label">
+      PLAYLIST
+    </span>
+
   </div>
 
-  <div id="playlist"></div>
+  <div id="playlist" class="playlist">
+
+    <div class="empty">
+
+      <div class="empty-ghost">
+        👻
+      </div>
+
+      <p>
+        هنوز موزیکی اضافه نشده.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<section
+  id="managePanel"
+  class="manage-panel hidden"
+  aria-hidden="true"
+>
+
+  <div class="manage-title">
+    MUSIC LIBRARY
+  </div>
+
+  <p class="hint">
+    موزیک‌ها از کتابخانه عمومی GHOSTI RADIO بارگذاری می‌شوند.
+  </p>
+
+  <div class="library-note">
+
+    برای اضافه کردن موزیک جدید، فایل MP3 را در پوشه
+    <code>music/</code>
+    قرار بده و اطلاعات آن را در
+    <code>tracks.json</code>
+    اضافه کن.
+
+  </div>
 
 </section>
 
 
 <footer>
-  GHOSTI RADIO · 2026
+
+  <span>GHOSTI RADIO</span>
+
+  <span class="footer-separator">
+    ·
+  </span>
+
+  <span>
+    @ghostimostiw
+  </span>
+
 </footer>
 ```
 
   </main>
 
-  <div id="player" class="player hidden">
+  <div
+    class="player hidden"
+    id="player"
+    aria-label="Audio player"
+  >
 
 ```
+<div class="player-status">
+
+  <span class="player-live-dot"></span>
+
+  <span>
+    ON AIR
+  </span>
+
+</div>
+
+
 <div class="now-playing">
 
   <div class="now-dot"></div>
@@ -56,11 +156,11 @@
   <div class="now-text">
 
     <div id="nowTitle">
-      Nothing playing
+      —
     </div>
 
     <div id="nowArtist">
-      GHOSTI
+      —
     </div>
 
   </div>
@@ -68,34 +168,36 @@
 </div>
 
 
-<button
-  id="prevBtn"
-  class="player-btn"
-  type="button"
-  aria-label="Previous"
->
-  ‹
-</button>
+<div class="player-controls">
 
+  <button
+    id="prevBtn"
+    class="player-btn"
+    type="button"
+    aria-label="Previous track"
+  >
+    ‹
+  </button>
 
-<button
-  id="playBtn"
-  class="play-btn"
-  type="button"
-  aria-label="Play"
->
-  ▶
-</button>
+  <button
+    id="playBtn"
+    class="play-btn"
+    type="button"
+    aria-label="Play"
+  >
+    ▶
+  </button>
 
+  <button
+    id="nextBtn"
+    class="player-btn"
+    type="button"
+    aria-label="Next track"
+  >
+    ›
+  </button>
 
-<button
-  id="nextBtn"
-  class="player-btn"
-  type="button"
-  aria-label="Next"
->
-  ›
-</button>
+</div>
 
 
 <div class="progress-area">
@@ -106,7 +208,7 @@
     min="0"
     max="100"
     value="0"
-    step="0.1"
+    aria-label="Track progress"
   >
 
   <div class="time">
@@ -122,15 +224,15 @@
   </div>
 
 </div>
+
+
+<audio
+  id="audio"
+  preload="metadata"
+></audio>
 ```
 
   </div>
-
-<audio
-id="audio"
-preload="metadata"
-
-> </audio>
 
   <script src="app.js"></script>
 
