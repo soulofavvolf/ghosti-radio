@@ -17,18 +17,17 @@ return `${m}:${s}`;
 }
 
 function escapeHtml(value) {
-return String(value).replace(/[&<>"']/g, (char) => {
-const map = {
-"&": "&",
-"<": "<",
-">": ">",
-'"': """,
-"'": "'"
-};
-
-```
-return map[char];
-```
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return map[char];
+  });
+}
 
 });
 }
