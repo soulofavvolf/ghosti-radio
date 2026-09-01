@@ -6,571 +6,399 @@ let currentIndex = -1;
 const $ = (id) => document.getElementById(id);
 
 /* =========================
-HELPERS
-========================= */
+   HELPERS
+   ========================= */
 
 function fmt(sec) {
-if (!Number.isFinite(sec)) return "0:00";
+  if (!Number.isFinite(sec)) return "0:00";
 
-const m = Math.floor(sec / 60);
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60)
+    .toString()
+    .padStart(2, "0");
 
-const s = Math.floor(sec % 60)
-.toString()
-.padStart(2, "0");
-
-return `${m}:${s}`;
+  return `${m}:${s}`;
 }
 
 function escapeHtml(value) {
-return String(value).replace(/[&<>"']/g, (char) => {
-
-```
-const map = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;"
-};
-
-return map[char];
-```
-
-});
+  return String(value).replace(/[&<>"']/g, (char) => {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+    return map[char];
+  });
 }
 
 /* =========================
-LOAD PLAYLIST
-========================= */
+   LOAD PLAYLIST
+   ========================= */
 
 async function loadTracks() {
+  try {
+    const response = await fetch("tracks.json", {
+      cache: "no-store"
+    });
 
-try {
+    if (!response.ok) {
+      throw new Error(`tracks.json: ${response.status}`);
+    }
 
-```
-const response = await fetch("tracks.json", {
-  cache: "no-store"
-});
+    const data = await response.json();
 
-if (!response.ok) {
-  throw new Error(
-    `tracks.json: ${response.status}`
-  );
-}
+    tracks = Array.isArray(data) ? data : [];
 
-const data = await response.json();
+    render();
+  } catch (error) {
+    console.error("GHOSTI RADIO:", error);
 
-tracks = Array.isArray(data)
-  ? data
-  : [];
+    tracks = [];
 
-render();
-```
+    $("trackCount").textContent = "offline";
 
-} catch (error) {
-
-```
-console.error(
-  "GHOSTI RADIO:",
-  error
-);
-
-tracks = [];
-
-$("trackCount").textContent =
-  "offline";
-
-$("playlist").innerHTML = `
-  <div class="empty">
-    <div class="empty-ghost">👻</div>
-    <p>کتابخانه موزیک در دسترس نیست.</p>
-  </div>
-`;
-```
-
-}
-
+    $("playlist").innerHTML = `
+      <div class="empty">
+        <div class="empty-ghost">👻</div>
+        <p>کتابخانه موزیک در دسترس نیست.</p>
+      </div>
+    `;
+  }
 }
 
 /* =========================
-PLAYLIST
-========================= */
+   RENDER
+   ========================= */
 
 function render() {
+  $("trackCount").textContent =
+    `${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
 
-$("trackCount").textContent =
-`${tracks.length} track${tracks.length === 1 ? "" : "s"}`;
+  const playlist = $("playlist");
 
-const playlist =
-$("playlist");
-
-if (!tracks.length) {
-
-```
-playlist.innerHTML = `
-  <div class="empty">
-    <div class="empty-ghost">👻</div>
-    <p>هنوز موزیکی اضافه نشده.</p>
-  </div>
-`;
-
-$("player")
-  .classList
-  .add("hidden");
-
-return;
-```
-
-}
-
-playlist.innerHTML =
-tracks.map((track, index) => {
-
-```
-  const active =
-    index === currentIndex;
-
-
-  return `
-    <div class="track ${active ? "is-playing" : ""}">
-
-      <div class="track-index">
-        ${String(index + 1).padStart(2, "0")}
+  if (!tracks.length) {
+    playlist.innerHTML = `
+      <div class="empty">
+        <div class="empty-ghost">👻</div>
+        <p>هنوز موزیکی اضافه نشده.</p>
       </div>
+    `;
 
-      <div class="track-info">
-
-        <div class="track-title">
-          ${escapeHtml(
-            track.name || "Untitled"
-          )}
-        </div>
-
-        <div class="track-artist">
-          ${escapeHtml(
-            track.artist || "GHOSTI"
-          )}
-        </div>
-
-      </div>
-
-      <div class="track-actions">
-
-        <button
-          class="icon-btn"
-          type="button"
-          data-play="${index}"
-          aria-label="Play"
-        >
-          ${
-            active && !audio.paused
-              ? "Ⅱ"
-              : "▶"
-          }
-        </button>
-
-      </div>
-
-    </div>
-  `;
-
-}).join("");
-```
-
-playlist
-.querySelectorAll("[data-play]")
-.forEach((button) => {
-
-```
-  button.addEventListener(
-    "click",
-    () => {
-
-      playAt(
-        Number(
-          button.dataset.play
-        )
-      );
-
-    }
-  );
-
-});
-```
-
-}
-
-/* =========================
-PLAY TRACK
-========================= */
-
-async function playAt(index) {
-
-if (!tracks[index]) return;
-
-const track =
-tracks[index];
-
-currentIndex =
-index;
-
-const source =
-new URL(
-track.file,
-window.location.href
-).href;
-
-console.log(
-"GHOSTI RADIO:",
-source
-);
-
-audio.src =
-source;
-
-$("nowTitle").textContent =
-track.name || "Untitled";
-
-$("nowArtist").textContent =
-track.artist || "GHOSTI";
-
-if ($("nowTitleLarge")) {
-
-```
-$("nowTitleLarge").textContent =
-  track.name || "Untitled";
-```
-
-}
-
-if ($("nowArtistLarge")) {
-
-```
-$("nowArtistLarge").textContent =
-  track.artist || "GHOSTI";
-```
-
-}
-
-$("player")
-.classList
-.remove("hidden");
-
-try {
-
-```
-await audio.play();
-```
-
-} catch (error) {
-
-```
-console.error(
-  "Playback:",
-  error
-);
-```
-
-}
-
-render();
-
-}
-
-/* =========================
-PLAY / PAUSE
-========================= */
-
-$("playBtn")
-.addEventListener(
-"click",
-async () => {
-
-```
-  if (!tracks.length) return;
-
-
-  if (currentIndex < 0) {
-
-    await playAt(0);
+    $("player").classList.add("hidden");
 
     return;
-
   }
 
+  playlist.innerHTML = tracks.map((track, index) => {
+    const active = index === currentIndex;
 
-  if (audio.paused) {
+    return `
+      <div class="track ${active ? "is-playing" : ""}">
 
-    try {
+        <div class="track-index">
+          ${String(index + 1).padStart(2, "0")}
+        </div>
 
-      await audio.play();
+        <div class="track-info">
 
-    } catch (error) {
+          <div class="track-title">
+            ${escapeHtml(track.name || "Untitled")}
+          </div>
 
-      console.error(
-        "Playback:",
-        error
-      );
+          <div class="track-artist">
+            ${escapeHtml(track.artist || "GHOSTI")}
+          </div>
 
-    }
+        </div>
 
-  } else {
+        <div class="track-actions">
 
-    audio.pause();
+          <button
+            class="icon-btn"
+            type="button"
+            data-play="${index}"
+            aria-label="Play"
+          >
+            ${active && !audio.paused ? "Ⅱ" : "▶"}
+          </button>
 
-  }
+        </div>
 
+      </div>
+    `;
+  }).join("");
+
+  playlist
+    .querySelectorAll("[data-play]")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        playAt(Number(button.dataset.play));
+      });
+    });
 }
-```
-
-);
 
 /* =========================
-PREVIOUS
-========================= */
+   PLAY TRACK
+   ========================= */
 
-$("prevBtn")
-.addEventListener(
-"click",
-() => {
+async function playAt(index) {
+  if (!tracks[index]) return;
 
-```
+  const track = tracks[index];
+
+  currentIndex = index;
+
+  const source = new URL(
+    track.file,
+    window.location.href
+  ).href;
+
+  console.log("GHOSTI RADIO:", source);
+
+  audio.src = source;
+
+  $("nowTitle").textContent =
+    track.name || "Untitled";
+
+  $("nowArtist").textContent =
+    track.artist || "GHOSTI";
+
+  if ($("nowTitleLarge")) {
+    $("nowTitleLarge").textContent =
+      track.name || "Untitled";
+  }
+
+  if ($("nowArtistLarge")) {
+    $("nowArtistLarge").textContent =
+      track.artist || "GHOSTI";
+  }
+
+  $("player").classList.remove("hidden");
+
+  try {
+    await audio.play();
+  } catch (error) {
+    console.error("Playback:", error);
+  }
+
+  render();
+}
+
+/* =========================
+   PLAY / PAUSE
+   ========================= */
+
+$("playBtn").addEventListener("click", async () => {
+  setupVisualizer();
+
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
   if (!tracks.length) return;
 
+  if (currentIndex < 0) {
+    await playAt(0);
+    return;
+  }
+
+  if (audio.paused) {
+    try {
+      await audio.play();
+    } catch (error) {
+      console.error("Playback:", error);
+    }
+  } else {
+    audio.pause();
+  }
+});
+
+/* =========================
+   PREVIOUS
+   ========================= */
+
+$("prevBtn").addEventListener("click", () => {
+  if (!tracks.length) return;
 
   const index =
     currentIndex <= 0
       ? tracks.length - 1
       : currentIndex - 1;
 
-
   playAt(index);
-
-}
-```
-
-);
+});
 
 /* =========================
-NEXT
-========================= */
+   NEXT
+   ========================= */
 
-$("nextBtn")
-.addEventListener(
-"click",
-() => {
-
-```
+$("nextBtn").addEventListener("click", () => {
   if (!tracks.length) return;
-
 
   const index =
     currentIndex >= tracks.length - 1
       ? 0
       : currentIndex + 1;
 
-
   playAt(index);
-
-}
-```
-
-);
+});
 
 /* =========================
-AUDIO EVENTS
-========================= */
+   AUDIO EVENTS
+   ========================= */
 
-audio.addEventListener(
-"play",
-() => {
+audio.addEventListener("play", () => {
+  $("playBtn").textContent = "Ⅱ";
 
-```
-$("playBtn").textContent =
-  "Ⅱ";
+  document.body.classList.add("is-playing");
 
+  render();
+});
 
-document.body
-  .classList
-  .add("is-playing");
+audio.addEventListener("pause", () => {
+  $("playBtn").textContent = "▶";
 
+  document.body.classList.remove("is-playing");
 
-render();
-```
+  render();
+});
 
-}
-);
+audio.addEventListener("loadedmetadata", () => {
+  $("duration").textContent =
+    fmt(audio.duration);
+});
 
-audio.addEventListener(
-"pause",
-() => {
-
-```
-$("playBtn").textContent =
-  "▶";
-
-
-document.body
-  .classList
-  .remove("is-playing");
-
-
-render();
-```
-
-}
-);
-
-audio.addEventListener(
-"loadedmetadata",
-() => {
-
-```
-$("duration").textContent =
-  fmt(audio.duration);
-```
-
-}
-);
-
-audio.addEventListener(
-"timeupdate",
-() => {
-
-```
-if (!audio.duration) return;
-
-
-const percent =
-  (audio.currentTime /
-    audio.duration) *
-  100;
-
-
-$("progress").value =
-  percent;
-
-
-$("currentTime").textContent =
-  fmt(audio.currentTime);
-```
-
-}
-);
-
-audio.addEventListener(
-"ended",
-() => {
-
-```
-if (!tracks.length) return;
-
-
-const next =
-  currentIndex >= tracks.length - 1
-    ? 0
-    : currentIndex + 1;
-
-
-playAt(next);
-```
-
-}
-);
-
-audio.addEventListener(
-"error",
-() => {
-
-```
-console.error(
-  "GHOSTI RADIO audio error:",
-  audio.src
-);
-```
-
-}
-);
-
-/* =========================
-PROGRESS
-========================= */
-
-$("progress")
-.addEventListener(
-"input",
-(event) => {
-
-```
+audio.addEventListener("timeupdate", () => {
   if (!audio.duration) return;
 
+  const percent =
+    (audio.currentTime / audio.duration) * 100;
 
-  audio.currentTime =
-    (Number(
-      event.target.value
-    ) / 100) *
-    audio.duration;
+  $("progress").value = percent;
 
-}
-```
+  $("currentTime").textContent =
+    fmt(audio.currentTime);
+});
 
-);
+audio.addEventListener("ended", () => {
+  if (!tracks.length) return;
+
+  const next =
+    currentIndex >= tracks.length - 1
+      ? 0
+      : currentIndex + 1;
+
+  playAt(next);
+});
+
+audio.addEventListener("error", () => {
+  console.error(
+    "GHOSTI RADIO audio error:",
+    audio.src
+  );
+});
 
 /* =========================
-MANAGEMENT
-========================= */
+   PROGRESS
+   ========================= */
 
-const manageBtn =
-$("manageBtn");
+$("progress").addEventListener("input", (event) => {
+  if (!audio.duration) return;
+
+  audio.currentTime =
+    (Number(event.target.value) / 100) *
+    audio.duration;
+});
+
+/* =========================
+   MANAGEMENT
+   ========================= */
+
+const manageBtn = $("manageBtn");
 
 if (manageBtn) {
+  manageBtn.addEventListener("click", () => {
+    const panel = $("managePanel");
 
-manageBtn.addEventListener(
-"click",
-() => {
+    if (!panel) return;
 
-```
-  const panel =
-    $("managePanel");
+    const show =
+      panel.classList.contains("hidden");
 
-
-  if (!panel) return;
-
-
-  const show =
-    panel.classList.contains(
-      "hidden"
+    panel.classList.toggle(
+      "hidden",
+      !show
     );
 
+    panel.setAttribute(
+      "aria-hidden",
+      String(!show)
+    );
 
-  panel.classList.toggle(
-    "hidden",
-    !show
-  );
-
-
-  panel.setAttribute(
-    "aria-hidden",
-    String(!show)
-  );
-
-
-  document.body
-    .classList
-    .toggle(
+    document.body.classList.toggle(
       "manage-mode",
       show
     );
-
-}
-```
-
-);
-
+  });
 }
 
 /* =========================
-START
-========================= */
+   VISUALIZER
+   ========================= */
+
+let audioCtx = null;
+let analyser = null;
+let visualizerSource = null;
+
+function setupVisualizer() {
+  if (audioCtx) return;
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 64;
+
+  visualizerSource = audioCtx.createMediaElementSource(audio);
+  visualizerSource.connect(analyser);
+  analyser.connect(audioCtx.destination);
+
+  drawVisualizer();
+}
+
+function drawVisualizer() {
+  const canvas = $("visualizer");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const bufferLength = analyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+
+  function draw() {
+    requestAnimationFrame(draw);
+
+    analyser.getByteFrequencyData(dataArray);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const barWidth = (canvas.width / bufferLength) * 1.5;
+    let x = 0;
+
+    for (let i = 0; i < bufferLength; i++) {
+      const barHeight = (dataArray[i] / 255) * canvas.height;
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+      x += barWidth + 2;
+    }
+  }
+
+  draw();
+}
+
+/* =========================
+   START
+   ========================= */
 
 loadTracks();
